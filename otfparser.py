@@ -134,7 +134,7 @@ class OtfParser :
             i += 1
 
     def __parse(self, file) :
-#        print("---> " + file)
+#       print("---> " + file)
         with open(file, "rb") as infile :
             bin_data = infile.read(12)
             self.__ttc_header = TTCHeader(bin_data)
