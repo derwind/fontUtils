@@ -10,6 +10,8 @@ import sys
 
 ################################################################################
 
+py_ver = sys.version_info[0]    # version of python
+
 ## custom exception class
 class MyError(Exception) :
     def __init__(self, value):
@@ -22,11 +24,21 @@ class MyError(Exception) :
 class ValUtil :
     @staticmethod
     def ushort(data) :
-        return data[0] << 8 | data[1]
+        global py_ver
+        if py_ver == 2 :
+            return ord(data[0]) << 8 | ord(data[1])
+        else :
+            return data[0] << 8 | data[1]
+        
 
     @staticmethod
     def ulong(data) :
-        return data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3]
+        global py_ver
+        if py_ver == 2 :
+            return ord(data[0]) << 24 | ord(data[1]) << 16 | ord(data[2]) << 8 | ord(data[3])
+        else :
+            return data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3]
+        
 
 ## TTCHeader for OTF file
 class TTCHeader :
@@ -34,7 +46,7 @@ class TTCHeader :
         self.__parse(data)
 
     @classmethod
-    def get_size(self) :
+    def get_size(cls) :
         return 12
 
     def get_num_tables(self) :
@@ -48,8 +60,13 @@ class TTCHeader :
         print("  range_shift   =%d" % (self.__range_shift))
 
     def __parse(self, data) :
-        if data[0] != ord('O') or data[1] != ord('T') or data[2] != ord('T') or data[3] != ord('O') :
-            raise MyError("invalid header")
+        global py_ver
+        if py_ver == 2 :
+            if data[:4] != "OTTO" :
+                raise MyError("invalid header")
+        else :
+            if data[0] != ord('O') or data[1] != ord('T') or data[2] != ord('T') or data[3] != ord('O') :
+                raise MyError("invalid header")
 
         data = data[4:]
         self.__num_tables     = ValUtil.ushort(data)
@@ -107,6 +124,7 @@ class Table :
         print("[Table(%s)]" % (self.__tag))
         if self.__tag == "name" :
             print("%s" % (self.__data))
+            pass
         else :
             print("  abbreviated...")
 
