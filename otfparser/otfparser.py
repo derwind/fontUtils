@@ -24,6 +24,33 @@ class MyError(Exception):
 ## utility of values
 class ValUtil(object):
     @staticmethod
+    def schar(data):
+        global py_ver
+        n = ValUtil.uchar(data)
+
+        sign = (n >> 7) & 0x1
+        if sign == 0:
+            return n
+        else:
+            return -((~n & 0x7f) + 1)
+
+    @staticmethod
+    def scharpop(data):
+        return ValUtil.schar(data), data[1:]
+
+    @staticmethod
+    def uchar(data):
+        global py_ver
+        if py_ver == 2:
+            return ord(data[0])
+        else:
+            return data[0]
+
+    @staticmethod
+    def ucharpop(data):
+        return ValUtil.uchar(data), data[1:]
+
+    @staticmethod
     def sshort(data):
         global py_ver
         n = ValUtil.ushort(data)
@@ -49,6 +76,32 @@ class ValUtil(object):
     @staticmethod
     def ushortpop(data):
         return ValUtil.ushort(data), data[2:]
+
+    def sint24(data):
+        global py_ver
+        n = ValUtil.uint24(data)
+
+        sign = (n >> 23) & 0x1
+        if sign == 0:
+            return n
+        else:
+            return -((~n & 0x7fffff) + 1)
+
+    @staticmethod
+    def sint24pop(data):
+        return ValUtil.sint24(data), data[3:]
+
+    @staticmethod
+    def uint24(data):
+        global py_ver
+        if py_ver == 2:
+            return ord(data[0]) << 16 | ord(data[1]) << 8 | ord(data[2])
+        else:
+            return data[0] << 16 | data[1] << 8 | data[2]
+
+    @staticmethod
+    def uint24pop(data):
+        return ValUtil.uint24(data), data[3:]
 
     def slong(data):
         global py_ver
@@ -117,6 +170,24 @@ class OTData(object):
         else:
             return ValUtil.ushort(offset) == 0
 
+# 5176.CFF.pdf  Table 2 CFF Data Types
+class CFFData(object):
+    @staticmethod
+    def Offset(data, n):
+        if n == 1:
+            return ValUtil.ucharpop(data)
+        elif n == 2:
+            return ValUtil.ushortpop(data)
+        elif n == 3:
+            return ValUtil.uint24pop(data)
+        elif n == 4:
+            return ValUtil.ulongpop(data)
+        else:
+            raise
+
+    @staticmethod
+    def OffSize(data):
+        return ValUtil.ucharpop(data)
 
 ## utility of LongDateTime
 class LongDateTime(object):
@@ -342,18 +413,73 @@ class LangTagRecord(object):
 # CFF
 
 ## http://www.microsoft.com/typography/otspec/cff.htm
+## http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5176.CFF.pdf
 ## http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5177.Type2.pdf
 ## OOps...
 class CffTable(Table):
     def __init__(self, data, tag):
         super(CffTable, self).__init__(data, tag)
 
-    def show(self):
-        print("[Table(%s)]" % (self.tag))
-        print("%s" % (self.data))
-
     def parse(self, data):
         super(CffTable, self).parse(data)
+
+        self.data_head    = data
+        self.header       = CffHeader(data)
+        self.nameIndex    = CffIndexData(self.header.data, "Name")
+        self.topDictIndex = CffIndexData(self.nameIndex.data, "Top DICT")
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        self.header.show()
+        self.nameIndex.show()
+        self.topDictIndex.show()
+
+# 5176.CFF.pdf  6 Header
+class CffHeader(object):
+    def __init__(self, data):
+        self.data = self.parse(data)
+
+    def parse(self, data):
+        self.major, data   = ValUtil.ucharpop(data)
+        self.minor, data   = ValUtil.ucharpop(data)
+        self.hdrSize, data = ValUtil.ucharpop(data)
+        self.offSize, data = CFFData.OffSize(data)
+        return data
+
+    def show(self, storage = None):
+        print("  [CffHeader]")
+        print("    major   = %d" % (self.major))
+        print("    minor   = %d" % (self.minor))
+        print("    hdrSize = %d" % (self.hdrSize))
+        print("    offSize = %d" % (self.offSize))
+
+# 5176.CFF.pdf  5 INDEX Data
+class CffIndexData(object):
+    def __init__(self, data, name):
+        self.name = name
+        self.data = self.parse(data)
+
+    def parse(self, data):
+        self.count, data   = ValUtil.ushortpop(data)
+        if self.count != 0:
+            self.offSize, data = CFFData.OffSize(data)
+            self.offset = []
+            for i in range(self.count + 1):
+                val, data = CFFData.Offset(data, self.offSize)
+                self.offset.append(val)
+            self.objData = []
+            for i in range(1, self.count + 1):
+                objData, data = data[:self.offset[i]-1], data[self.offset[i]-1:]
+                self.objData.append(objData)
+        return data
+
+    def show(self, storage = None):
+        print("  [CffIndexData(%s)]" % (self.name))
+        print("    count   = %d" % (self.count))
+        if self.count != 0:
+            print("    offSize = %d" % (self.offSize))
+            print("    offset  = {0}".format(", ".join([str(val) for val in self.offset])))
+            print("    data    = {0}".format(", ".join(self.objData)))
 
 # CFF
 ##################################################
@@ -365,16 +491,16 @@ class GposTable(Table):
     def __init__(self, data, tag):
         super(GposTable, self).__init__(data, tag)
 
-    def show(self):
-        print("[Table(%s)]" % (self.tag))
-        self.header.show()
-        self.scriptList.show()
-
     def parse(self, data):
         super(GposTable, self).parse(data)
 
         self.header     = GposHeader(data)
         self.scriptList = ScriptList(data[self.header.ScriptList:])
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        self.header.show()
+        self.scriptList.show()
 
 class GposHeader(object):
     def __init__(self, data):
@@ -501,7 +627,7 @@ class LangSysTable(object):
         print("            ReqFeatureIndex = 0x%04x" % (self.ReqFeatureIndex))
         print("            FeatureCount    = %d" % (self.FeatureCount))
         if self.FeatureIndex:
-            print("            FeatureIndex    = {0}".format(", ".join(["{0}".format(index) for index in self.FeatureIndex])))
+            print("            FeatureIndex    = {0}".format(", ".join([str(index) for index in self.FeatureIndex])))
 
 # GPOS
 ##################################################
@@ -589,12 +715,9 @@ class OtfParser(object):
         infile.seek(offset, os.SEEK_SET)
         data = infile.read(length)
         tag = table_record.get_tag()
-        if tag.lower() == "head":
-            self.__table.append( HeadTable(data, tag) )
-        elif tag.lower() == "cff":
+
+        if tag.lower() == "cff ":
             self.__table.append( CffTable(data, tag) )
-        elif tag.lower() == "name":
-            self.__table.append( NameTable(data, tag) )
         elif tag.lower() == "loca":
             self.__table.append( LocaTable(data, tag) )
         elif tag.lower() == "glyp":
@@ -603,6 +726,10 @@ class OtfParser(object):
             self.__table.append( GposTable(data, tag) )
         elif tag.lower() == "gsub":
             self.__table.append( GsubTable(data, tag) )
+        elif tag.lower() == "head":
+            self.__table.append( HeadTable(data, tag) )
+        elif tag.lower() == "name":
+            self.__table.append( NameTable(data, tag) )
         else:
             self.__table.append( Table(data, tag) )
 
