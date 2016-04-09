@@ -111,10 +111,10 @@ class Header(object):
 
     def show(self):
         print("[Header]")
-        print("  num_tables    =%u" % (self.__num_tables))
-        print("  search_range  =%u" % (self.__search_range))
-        print("  entry_selector=%u" % (self.__entry_selector))
-        print("  range_shift   =%u" % (self.__range_shift))
+        print("  num_tables    = %u" % (self.__num_tables))
+        print("  search_range  = %u" % (self.__search_range))
+        print("  entry_selector= %u" % (self.__entry_selector))
+        print("  range_shift   = %u" % (self.__range_shift))
 
     def __parse(self, data):
         global py_ver
@@ -158,10 +158,10 @@ class TableRecord(object):
 
     def show(self):
         print("[TableRecord]")
-        print("  tag           =%c%c%c%c" % (chr(self.__tag >> 24 & 0xff), chr(self.__tag >> 16 & 0xff), chr(self.__tag >> 8 & 0xff),chr(self.__tag & 0xff)))
-        print("  check_sum     =0x%0x" % (self.__check_sum))
-        print("  offset        =%u" % (self.__offset))
-        print("  length        =%u" % (self.__length))
+        print("  tag           = %c%c%c%c" % (chr(self.__tag >> 24 & 0xff), chr(self.__tag >> 16 & 0xff), chr(self.__tag >> 8 & 0xff),chr(self.__tag & 0xff)))
+        print("  check_sum     = 0x%0x" % (self.__check_sum))
+        print("  offset        = %u" % (self.__offset))
+        print("  length        = %u" % (self.__length))
 
     def __parse(self, data):
         self.__tag, data       = ValUtil.ulongpop(data)
@@ -289,18 +289,6 @@ class NameTable(Table):
     def __init__(self, data, tag):
         super(NameTable, self).__init__(data, tag)
 
-    def show(self):
-        print("[Table(%s)]" % (self.tag))
-        #print("%s" % (self.data))
-        print("  format       = %d" % (self.format))
-        print("  count        = %d" % (self.count))
-        print("  stringOffset = %d" % (self.stringOffset))
-        for name_record in self.nameRecord:
-            name_record.show(self.storage)
-        if self.format != 0:
-            for lang_tag_record in self.langTagRecord:
-                lang_tag_record.show(self.storage)
-
     def parse(self, data):
         super(NameTable, self).parse(data)
 
@@ -319,6 +307,98 @@ class NameTable(Table):
                 data = lang_tag_record.data
                 self.langTagRecord.append(lang_tag_record)
         self.storage = data
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        #print("%s" % (self.data))
+        print("  format       = %d" % (self.format))
+        print("  count        = %d" % (self.count))
+        print("  stringOffset = %d" % (self.stringOffset))
+        for name_record in self.nameRecord:
+            name_record.show(self.storage)
+        if self.format != 0:
+            for lang_tag_record in self.langTagRecord:
+                lang_tag_record.show(self.storage)
+
+class ScriptRecord(object):
+    def __init__(self, data):
+        self.data = self.parse(data)
+
+    def parse(self, data):
+        self.ScriptTag, data = data[:4], data[4:]
+        self.Script, data    = ValUtil.ushortpop(data)
+        return data
+
+    def show(self, scriptTable = None):
+        print("  [ScriptRecord]")
+        print("    ScriptTag = %s" % (self.ScriptTag))
+        print("    Script    = %d" % (self.Script))
+
+# https://www.microsoft.com/typography/otspec/chapter2.htm
+# http://partners.adobe.com/public/developer/opentype/index_table_formats.html
+class ScriptList(object):
+    def __init__(self, data):
+        self.data = self.parse(data)
+
+    def parse(self, data):
+        self.ScriptCount, data = ValUtil.ushortpop(data)
+        self.ScriptRecord = []
+        for i in range(self.ScriptCount):
+            record = ScriptRecord(data)
+            data = record.data
+            self.ScriptRecord.append(record)
+
+    def show(self):
+        print("  [ScriptList]")
+        print("    ScriptCount = %d" % (self.ScriptCount))
+        for record in self.ScriptRecord:
+            record.show()
+
+class GposHeader(object):
+    def __init__(self, data):
+        self.data = self.parse(data)
+
+    def parse(self, data):
+        self.Version, data     = ValUtil.ulongpop(data)
+        self.ScriptList, data  = ValUtil.ushortpop(data)
+        self.FeatureList, data = ValUtil.ushortpop(data)
+        self.LookupList, data  = ValUtil.ushortpop(data)
+        return data
+
+    def show(self):
+        print("  [GposHeader]")
+        print("    Version     = 0x%08x" % (self.Version))
+        print("    ScriptList  = %d" % (self.ScriptList))
+        print("    FeatureList = %d" % (self.FeatureList))
+        print("    LookupList  = %d" % (self.LookupList))
+
+# https://www.microsoft.com/typography/otspec/gpos.htm
+# http://partners.adobe.com/public/developer/opentype/index_table_formats2.html
+class GposTable(Table):
+    def __init__(self, data, tag):
+        super(GposTable, self).__init__(data, tag)
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        self.header.show()
+        self.scriptList.show()
+
+    def parse(self, data):
+        super(GposTable, self).parse(data)
+
+        self.header     = GposHeader(data)
+        self.scriptList = ScriptList(data[self.header.ScriptList:])
+
+class GsubTable(Table):
+    def __init__(self, data, tag):
+        super(GsubTable, self).__init__(data, tag)
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        print("%s" % (self.data))
+
+    def parse(self, data):
+        super(GsubTable, self).parse(data)
 
 ## TTF has a loca table
 class LocaTable(Table):
@@ -394,6 +474,10 @@ class OtfParser(object):
             self.__table.append( LocaTable(data, tag) )
         elif tag.lower() == "glyp":
             self.__table.append( GlypTable(data, tag) )
+        elif tag.lower() == "gpos":
+            self.__table.append( GposTable(data, tag) )
+        elif tag.lower() == "gsub":
+            self.__table.append( GsubTable(data, tag) )
         else:
             self.__table.append( Table(data, tag) )
 
