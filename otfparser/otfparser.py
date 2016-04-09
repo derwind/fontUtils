@@ -88,6 +88,35 @@ class ValUtil(object):
     def ulonglongpop(data):
         return ValUtil.ulonglong(data), data[8:]
 
+# https://www.microsoft.com/typography/otspec/otff.htm
+class OTData(object):
+    @staticmethod
+    def Fixed(data):
+        return ValUtil.ulongpop(data)
+
+    @staticmethod
+    def LONGDATETIME(data):
+        return ValUtil.ulonglongpop(data)
+
+    @staticmethod
+    def Tag(data):
+        return data[:4], data[4:]
+
+    @staticmethod
+    def GlyphID(data):
+        return ValUtil.ushortpop(data)
+
+    @staticmethod
+    def Offset(data):
+        return ValUtil.ushortpop(data)
+
+    @staticmethod
+    def isNullOffset(offset):
+        if isinstance(offset, int):
+            return offset == 0
+        else:
+            return ValUtil.ushort(offset) == 0
+
 
 ## utility of LongDateTime
 class LongDateTime(object):
@@ -182,20 +211,6 @@ class Table(object):
     def parse(self, data):
         self.data = data
 
-## http://www.microsoft.com/typography/otspec/cff.htm
-## http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5177.Type2.pdf
-## OOps...
-class CffTable(Table):
-    def __init__(self, data, tag):
-        super(CffTable, self).__init__(data, tag)
-
-    def show(self):
-        print("[Table(%s)]" % (self.tag))
-        print("%s" % (self.data))
-
-    def parse(self, data):
-        super(CffTable, self).parse(data)
-
 ## http://www.microsoft.com/typography/otspec/head.htm
 class HeadTable(Table):
     def __init__(self, data, tag):
@@ -230,8 +245,8 @@ class HeadTable(Table):
         self.magic_number, data = ValUtil.ulongpop(data)
         self.flags, data = ValUtil.ushortpop(data)
         self.units_per_em, data = ValUtil.ushortpop(data)
-        self.created, data = ValUtil.ulonglongpop(data)
-        self.modified, data = ValUtil.ulonglongpop(data)
+        self.created, data = OTData.LONGDATETIME(data)
+        self.modified, data = OTData.LONGDATETIME(data)
         self.xmin, data = ValUtil.sshortpop(data)
         self.ymin, data = ValUtil.sshortpop(data)
         self.xmax, data = ValUtil.sshortpop(data)
@@ -242,48 +257,8 @@ class HeadTable(Table):
         self.index_to_loc_format, data = ValUtil.sshortpop(data)
         self.glyph_data_format, data = ValUtil.sshortpop(data)
 
-
-class NameRecord(object):
-    def __init__(self, data):
-        self.data = self.parse(data)
-
-    def parse(self, data):
-        self.platformID, data = ValUtil.ushortpop(data)
-        self.encodingID, data = ValUtil.ushortpop(data)
-        self.languageID, data = ValUtil.ushortpop(data)
-        self.nameID, data     = ValUtil.ushortpop(data)
-        self.length, data     = ValUtil.ushortpop(data)
-        self.offset, data     = ValUtil.ushortpop(data)
-        return data
-
-    def show(self, storage = None):
-        print("  [NameRecord]")
-        print("    platformID = %d" % (self.platformID))
-        print("    encodingID = %d" % (self.encodingID))
-        print("    languageID = %d" % (self.languageID))
-        print("    nameID     = %d" % (self.nameID))
-        print("    length     = %d" % (self.length))
-        print("    offset     = %d" % (self.offset))
-        if storage is not None:
-            s = storage[self.offset:self.offset+self.length]
-            print("    string     = %s" % (s))
-
-class LangTagRecord(object):
-    def __init__(self, data):
-        self.data = self.parse(data)
-
-    def parse(self, data):
-        self.length, data     = ValUtil.ushortpop(data)
-        self.offset, data     = ValUtil.ushortpop(data)
-        return data
-
-    def show(self, storage = None):
-        print("  [LangTagRecord]")
-        print("    length   = %d" % (self.length))
-        print("    offset   = %d" % (self.offset))
-        if storage is not None:
-            s = storage[self.offset:self.offset+self.length]
-            print("    Lang-tag = %s" % (s))
+##################################################
+# name table
 
 class NameTable(Table):
     def __init__(self, data, tag):
@@ -320,57 +295,69 @@ class NameTable(Table):
             for lang_tag_record in self.langTagRecord:
                 lang_tag_record.show(self.storage)
 
-class ScriptRecord(object):
+class NameRecord(object):
     def __init__(self, data):
         self.data = self.parse(data)
 
     def parse(self, data):
-        self.ScriptTag, data = data[:4], data[4:]
-        self.Script, data    = ValUtil.ushortpop(data)
+        self.platformID, data = ValUtil.ushortpop(data)
+        self.encodingID, data = ValUtil.ushortpop(data)
+        self.languageID, data = ValUtil.ushortpop(data)
+        self.nameID, data     = ValUtil.ushortpop(data)
+        self.length, data     = ValUtil.ushortpop(data)
+        self.offset, data     = ValUtil.ushortpop(data)
         return data
 
-    def show(self, scriptTable = None):
-        print("  [ScriptRecord]")
-        print("    ScriptTag = %s" % (self.ScriptTag))
-        print("    Script    = %d" % (self.Script))
+    def show(self, storage = None):
+        print("  [NameRecord]")
+        print("    platformID = %d" % (self.platformID))
+        print("    encodingID = %d" % (self.encodingID))
+        print("    languageID = %d" % (self.languageID))
+        print("    nameID     = %d" % (self.nameID))
+        print("    length     = %d" % (self.length))
+        print("    offset     = %d" % (self.offset))
+        if storage:
+            s = storage[self.offset:self.offset+self.length]
+            print("    string     = %s" % (s))
 
-# https://www.microsoft.com/typography/otspec/chapter2.htm
-# http://partners.adobe.com/public/developer/opentype/index_table_formats.html
-class ScriptList(object):
+class LangTagRecord(object):
     def __init__(self, data):
         self.data = self.parse(data)
 
     def parse(self, data):
-        self.ScriptCount, data = ValUtil.ushortpop(data)
-        self.ScriptRecord = []
-        for i in range(self.ScriptCount):
-            record = ScriptRecord(data)
-            data = record.data
-            self.ScriptRecord.append(record)
-
-    def show(self):
-        print("  [ScriptList]")
-        print("    ScriptCount = %d" % (self.ScriptCount))
-        for record in self.ScriptRecord:
-            record.show()
-
-class GposHeader(object):
-    def __init__(self, data):
-        self.data = self.parse(data)
-
-    def parse(self, data):
-        self.Version, data     = ValUtil.ulongpop(data)
-        self.ScriptList, data  = ValUtil.ushortpop(data)
-        self.FeatureList, data = ValUtil.ushortpop(data)
-        self.LookupList, data  = ValUtil.ushortpop(data)
+        self.length, data     = ValUtil.ushortpop(data)
+        self.offset, data     = ValUtil.ushortpop(data)
         return data
 
+    def show(self, storage = None):
+        print("  [LangTagRecord]")
+        print("    length   = %d" % (self.length))
+        print("    offset   = %d" % (self.offset))
+        if storage:
+            s = storage[self.offset:self.offset+self.length]
+            print("    Lang-tag = %s" % (s))
+
+# name table
+##################################################
+# CFF
+
+## http://www.microsoft.com/typography/otspec/cff.htm
+## http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5177.Type2.pdf
+## OOps...
+class CffTable(Table):
+    def __init__(self, data, tag):
+        super(CffTable, self).__init__(data, tag)
+
     def show(self):
-        print("  [GposHeader]")
-        print("    Version     = 0x%08x" % (self.Version))
-        print("    ScriptList  = %d" % (self.ScriptList))
-        print("    FeatureList = %d" % (self.FeatureList))
-        print("    LookupList  = %d" % (self.LookupList))
+        print("[Table(%s)]" % (self.tag))
+        print("%s" % (self.data))
+
+    def parse(self, data):
+        super(CffTable, self).parse(data)
+
+# CFF
+##################################################
+# GPOS
 
 # https://www.microsoft.com/typography/otspec/gpos.htm
 # http://partners.adobe.com/public/developer/opentype/index_table_formats2.html
@@ -389,6 +376,137 @@ class GposTable(Table):
         self.header     = GposHeader(data)
         self.scriptList = ScriptList(data[self.header.ScriptList:])
 
+class GposHeader(object):
+    def __init__(self, data):
+        self.data = self.parse(data)
+
+    def parse(self, data):
+        self.Version, data     = OTData.Fixed(data)
+        self.ScriptList, data  = OTData.Offset(data)
+        self.FeatureList, data = OTData.Offset(data)
+        self.LookupList, data  = OTData.Offset(data)
+        return data
+
+    def show(self):
+        print("  [GposHeader]")
+        print("    Version     = 0x%08x" % (self.Version))
+        print("    ScriptList  = %d" % (self.ScriptList))
+        print("    FeatureList = %d" % (self.FeatureList))
+        print("    LookupList  = %d" % (self.LookupList))
+
+# https://www.microsoft.com/typography/otspec/chapter2.htm
+# http://partners.adobe.com/public/developer/opentype/index_table_formats.html
+class ScriptList(object):
+    def __init__(self, data):
+        self.data_head = data
+        self.parse(data)
+
+    def parse(self, data):
+        self.ScriptCount, data = ValUtil.ushortpop(data)
+        self.ScriptRecord = []
+        for i in range(self.ScriptCount):
+            record = ScriptRecord(data, self.data_head)
+            data = record.data
+            self.ScriptRecord.append(record)
+
+    def show(self):
+        print("  [ScriptList]")
+        print("    ScriptCount = %d" % (self.ScriptCount))
+        for record in self.ScriptRecord:
+            record.show()
+
+class ScriptRecord(object):
+    def __init__(self, data, scriptListHead = None):
+        self.data = self.parse(data, scriptListHead)
+
+    def parse(self, data, scriptListHead = None):
+        self.ScriptTag, data = OTData.Tag(data)
+        self.Script, data    = OTData.Offset(data)
+        self.ScriptTable     = None
+        if scriptListHead:
+            self.ScriptTable = ScriptTable(scriptListHead[self.Script:])
+        return data
+
+    def show(self):
+        print("    [ScriptRecord]")
+        print("      ScriptTag = %s" % (self.ScriptTag))
+        print("      Script    = %d" % (self.Script))
+        if self.ScriptTable:
+            self.ScriptTable.show()
+
+class ScriptTable(object):
+    def __init__(self, data):
+        self.data_head = data
+        self.parse(data)
+
+    def parse(self, data):
+        self.DefaultLangSys, data = OTData.Offset(data)
+        self.LangSysCount, data   = ValUtil.ushortpop(data)
+        self.DefaultLangSysTable  = None
+        if not OTData.isNullOffset(self.DefaultLangSys):
+            self.DefaultLangSysTable = LangSysTable(self.data_head[self.DefaultLangSys:])
+        self.LangSysTable = []
+        for i in range(self.LangSysCount):
+            langSysTable = LangSysRecord(data, self.data_head)
+            data = langSysTable.data
+            self.LangSysTable.append(langSysTable)
+        return data
+
+    def show(self):
+        print("      [ScriptTable]")
+        print("        DefaultLangSys = %s" % (self.DefaultLangSys))
+        print("        LangSysCount   = %d" % (self.LangSysCount))
+        if self.DefaultLangSysTable:
+            print("        [DefaultLangSysTable]")
+            self.DefaultLangSysTable.show()
+        for langSysTable in self.LangSysTable:
+            langSysTable.show()
+
+class LangSysRecord(object):
+    def __init__(self, data, scriptTableHead = None):
+        self.data = self.parse(data, scriptTableHead)
+
+    def parse(self, data, scriptTableHead):
+        self.LangSysTag, data = OTData.Tag(data)
+        self.LangSys, data    = OTData.Offset(data)
+        self.LangSysTable = None
+        if scriptTableHead:
+            self.LangSysTable = LangSysTable(scriptTableHead[self.LangSys:])
+        return data
+
+    def show(self):
+        print("        [LangSysRecord]")
+        print("          LangSysTag = %s" % (self.LangSysTag))
+        print("          LangSys    = %d" % (self.LangSys))
+        if self.LangSysTable:
+            self.LangSysTable.show()
+
+class LangSysTable(object):
+    def __init__(self, data):
+        self.data = self.parse(data)
+
+    def parse(self, data):
+        self.LookupOrder, data     = OTData.Offset(data)
+        self.ReqFeatureIndex, data = ValUtil.ushortpop(data)
+        self.FeatureCount, data    = ValUtil.ushortpop(data)
+        self.FeatureIndex = []
+        for i in range(self.FeatureCount):
+            index, data = ValUtil.ushortpop(data)
+            self.FeatureIndex.append(index)
+        return data
+
+    def show(self):
+        print("          [LangSysTable]")
+        print("            LookupOrder     = %d" % (self.LookupOrder))
+        print("            ReqFeatureIndex = 0x%04x" % (self.ReqFeatureIndex))
+        print("            FeatureCount    = %d" % (self.FeatureCount))
+        if self.FeatureIndex:
+            print("            FeatureIndex    = {0}".format(", ".join(["{0}".format(index) for index in self.FeatureIndex])))
+
+# GPOS
+##################################################
+# GSUB
+
 class GsubTable(Table):
     def __init__(self, data, tag):
         super(GsubTable, self).__init__(data, tag)
@@ -399,6 +517,9 @@ class GsubTable(Table):
 
     def parse(self, data):
         super(GsubTable, self).parse(data)
+
+# GSUB
+##################################################
 
 ## TTF has a loca table
 class LocaTable(Table):
@@ -412,6 +533,8 @@ class LocaTable(Table):
     def parse(self, data):
         super(LocaTable, self).parse(data)
 
+##################################################
+
 ## TTF has a glyp table
 class GlypTable(Table):
     def __init__(self, data, tag):
@@ -423,6 +546,8 @@ class GlypTable(Table):
 
     def parse(self, data):
         super(GlypTable, self).parse(data)
+
+##################################################
 
 ## main class of otfparser
 class OtfParser(object):
