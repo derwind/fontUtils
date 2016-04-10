@@ -197,6 +197,8 @@ class LongDateTime(object):
         d += datetime.timedelta(seconds = value) #+ datetime.timedelta(hours = 9)
         return "%u/%02u/%02u %02u:%02u:%02u" % (d.year, d.month, d.day, d.hour, d.minute, d.second)
 
+##################################################
+
 ## Header for OTF file
 class Header(object):
     def __init__(self, data):
@@ -423,16 +425,24 @@ class CffTable(Table):
     def parse(self, data):
         super(CffTable, self).parse(data)
 
-        self.data_head    = data
-        self.header       = CffHeader(data)
-        self.nameIndex    = CffIndexData(self.header.data, "Name")
-        self.topDictIndex = CffIndexData(self.nameIndex.data, "Top DICT")
+        # 5176.CFF.pdf  Table 1 CFF Data Layout
+        self.data_head        = data
+        self.header           = CffHeader(data)
+        self.nameIndex        = NameIndex(self.header.data)
+        self.topDictIndex     = TopDictIndex(self.nameIndex.data)
+        self.stringIndex      = CffIndexData(self.topDictIndex.data, "String")
+        self.globalSubrIndex  = CffIndexData(self.stringIndex.data, "Global Subr")
+        self.encodings        = None
+        self.charsets         = None
+        self.FDSelect         = None
 
     def show(self):
         print("[Table(%s)]" % (self.tag))
         self.header.show()
         self.nameIndex.show()
         self.topDictIndex.show()
+        self.stringIndex.show()
+        self.globalSubrIndex.show()
 
 # 5176.CFF.pdf  6 Header
 class CffHeader(object):
@@ -453,6 +463,14 @@ class CffHeader(object):
         print("    hdrSize = %d" % (self.hdrSize))
         print("    offSize = %d" % (self.offSize))
 
+# 5176.CFF.pdf  4 DICT Data
+# dictionary: [value][key][value][key]...
+#
+# [------------------- value -----------------------][-------- key ---------]
+# [operand(s); variable-size; integer or real values][operator; 1- or 2-byte]
+class CffDictData(object):
+    pass
+
 # 5176.CFF.pdf  5 INDEX Data
 class CffIndexData(object):
     def __init__(self, data, name):
@@ -469,16 +487,43 @@ class CffIndexData(object):
                 self.offset.append(val)
             self.objData = []
             for i in range(1, self.count + 1):
-                objData, data = data[:self.offset[i]-1], data[self.offset[i]-1:]
+                length = self.offset[i]-self.offset[i-1]
+                objData, data = data[:length], data[length:]
                 self.objData.append(objData)
         return data
 
-    def show(self, storage = None):
+    def show(self):
         print("  [CffIndexData(%s)]" % (self.name))
         print("    count   = %d" % (self.count))
         if self.count != 0:
             print("    offSize = %d" % (self.offSize))
             print("    offset  = {0}".format(", ".join([str(val) for val in self.offset])))
+
+class NameIndex(CffIndexData):
+    def __init__(self, data):
+        super(NameIndex, self).__init__(data, "Name")
+
+    def parse(self, data):
+        return super(NameIndex, self).parse(data)
+
+    def show(self):
+        super(NameIndex, self).show()
+
+        if self.count != 0:
+            print("    data    = {0}".format(", ".join(self.objData)))
+
+class TopDictIndex(CffIndexData):
+    def __init__(self, data):
+        super(TopDictIndex, self).__init__(data, "Top DICT")
+
+    def parse(self, data):
+        data = super(TopDictIndex, self).parse(data)
+        return data
+
+    def show(self):
+        super(TopDictIndex, self).show()
+
+        if self.count != 0:
             print("    data    = {0}".format(", ".join(self.objData)))
 
 # CFF
@@ -637,12 +682,12 @@ class GsubTable(Table):
     def __init__(self, data, tag):
         super(GsubTable, self).__init__(data, tag)
 
+    def parse(self, data):
+        super(GsubTable, self).parse(data)
+
     def show(self):
         print("[Table(%s)]" % (self.tag))
         print("%s" % (self.data))
-
-    def parse(self, data):
-        super(GsubTable, self).parse(data)
 
 # GSUB
 ##################################################
