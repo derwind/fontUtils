@@ -24,9 +24,9 @@ class MyError(Exception):
 ## utility of values
 class ValUtil(object):
     @staticmethod
-    def schar(data):
+    def schar(buf):
         global py_ver
-        n = ValUtil.uchar(data)
+        n = ValUtil.uchar(buf)
 
         sign = (n >> 7) & 0x1
         if sign == 0:
@@ -35,25 +35,25 @@ class ValUtil(object):
             return -((~n & 0x7f) + 1)
 
     @staticmethod
-    def scharpop(data):
-        return ValUtil.schar(data), data[1:]
+    def scharpop(buf):
+        return ValUtil.schar(buf), buf[1:]
 
     @staticmethod
-    def uchar(data):
+    def uchar(buf):
         global py_ver
         if py_ver == 2:
-            return ord(data[0])
+            return ord(buf[0])
         else:
-            return data[0]
+            return buf[0]
 
     @staticmethod
-    def ucharpop(data):
-        return ValUtil.uchar(data), data[1:]
+    def ucharpop(buf):
+        return ValUtil.uchar(buf), buf[1:]
 
     @staticmethod
-    def sshort(data):
+    def sshort(buf):
         global py_ver
-        n = ValUtil.ushort(data)
+        n = ValUtil.ushort(buf)
 
         sign = (n >> 15) & 0x1
         if sign == 0:
@@ -62,24 +62,24 @@ class ValUtil(object):
             return -((~n & 0x7fff) + 1)
 
     @staticmethod
-    def sshortpop(data):
-        return ValUtil.sshort(data), data[2:]
+    def sshortpop(buf):
+        return ValUtil.sshort(buf), buf[2:]
 
     @staticmethod
-    def ushort(data):
+    def ushort(buf):
         global py_ver
         if py_ver == 2:
-            return ord(data[0]) << 8 | ord(data[1])
+            return ord(buf[0]) << 8 | ord(buf[1])
         else:
-            return data[0] << 8 | data[1]
+            return buf[0] << 8 | buf[1]
 
     @staticmethod
-    def ushortpop(data):
-        return ValUtil.ushort(data), data[2:]
+    def ushortpop(buf):
+        return ValUtil.ushort(buf), buf[2:]
 
-    def sint24(data):
+    def sint24(buf):
         global py_ver
-        n = ValUtil.uint24(data)
+        n = ValUtil.uint24(buf)
 
         sign = (n >> 23) & 0x1
         if sign == 0:
@@ -88,24 +88,24 @@ class ValUtil(object):
             return -((~n & 0x7fffff) + 1)
 
     @staticmethod
-    def sint24pop(data):
-        return ValUtil.sint24(data), data[3:]
+    def sint24pop(buf):
+        return ValUtil.sint24(buf), buf[3:]
 
     @staticmethod
-    def uint24(data):
+    def uint24(buf):
         global py_ver
         if py_ver == 2:
-            return ord(data[0]) << 16 | ord(data[1]) << 8 | ord(data[2])
+            return ord(buf[0]) << 16 | ord(buf[1]) << 8 | ord(buf[2])
         else:
-            return data[0] << 16 | data[1] << 8 | data[2]
+            return buf[0] << 16 | buf[1] << 8 | buf[2]
 
     @staticmethod
-    def uint24pop(data):
-        return ValUtil.uint24(data), data[3:]
+    def uint24pop(buf):
+        return ValUtil.uint24(buf), buf[3:]
 
-    def slong(data):
+    def slong(buf):
         global py_ver
-        n = ValUtil.ulong(data)
+        n = ValUtil.ulong(buf)
 
         sign = (n >> 31) & 0x1
         if sign == 0:
@@ -114,54 +114,54 @@ class ValUtil(object):
             return -((~n & 0x7fffffff) + 1)
 
     @staticmethod
-    def slongpop(data):
-        return ValUtil.slong(data), data[4:]
+    def slongpop(buf):
+        return ValUtil.slong(buf), buf[4:]
 
     @staticmethod
-    def ulong(data):
+    def ulong(buf):
         global py_ver
         if py_ver == 2:
-            return ord(data[0]) << 24 | ord(data[1]) << 16 | ord(data[2]) << 8 | ord(data[3])
+            return ord(buf[0]) << 24 | ord(buf[1]) << 16 | ord(buf[2]) << 8 | ord(buf[3])
         else:
-            return data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3]
+            return buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3]
 
     @staticmethod
-    def ulongpop(data):
-        return ValUtil.ulong(data), data[4:]
+    def ulongpop(buf):
+        return ValUtil.ulong(buf), buf[4:]
 
     @staticmethod
-    def ulonglong(data):
+    def ulonglong(buf):
         global py_ver
         if py_ver == 2:
-            return ord(data[0]) << 56 | ord(data[1]) << 48 | ord(data[2]) << 40 | ord(data[3]) << 32 | ord(data[4]) << 24 | ord(data[5]) << 16 | ord(data[6]) << 8 | ord(data[7])
+            return ord(buf[0]) << 56 | ord(buf[1]) << 48 | ord(buf[2]) << 40 | ord(buf[3]) << 32 | ord(buf[4]) << 24 | ord(buf[5]) << 16 | ord(buf[6]) << 8 | ord(buf[7])
         else:
-            return data[0] << 56 | data[1] << 48 | data[2] << 40 | data[3] << 32 | data[4] << 24 | data[5] << 16 | data[6] << 8 | data[7]
+            return buf[0] << 56 | buf[1] << 48 | buf[2] << 40 | buf[3] << 32 | buf[4] << 24 | buf[5] << 16 | buf[6] << 8 | buf[7]
 
     @staticmethod
-    def ulonglongpop(data):
-        return ValUtil.ulonglong(data), data[8:]
+    def ulonglongpop(buf):
+        return ValUtil.ulonglong(buf), buf[8:]
 
 # https://www.microsoft.com/typography/otspec/otff.htm
 class OTData(object):
     @staticmethod
-    def Fixed(data):
-        return ValUtil.ulongpop(data)
+    def Fixed(buf):
+        return ValUtil.ulongpop(buf)
 
     @staticmethod
-    def LONGDATETIME(data):
-        return ValUtil.ulonglongpop(data)
+    def LONGDATETIME(buf):
+        return ValUtil.ulonglongpop(buf)
 
     @staticmethod
-    def Tag(data):
-        return data[:4], data[4:]
+    def Tag(buf):
+        return buf[:4], buf[4:]
 
     @staticmethod
-    def GlyphID(data):
-        return ValUtil.ushortpop(data)
+    def GlyphID(buf):
+        return ValUtil.ushortpop(buf)
 
     @staticmethod
-    def Offset(data):
-        return ValUtil.ushortpop(data)
+    def Offset(buf):
+        return ValUtil.ushortpop(buf)
 
     @staticmethod
     def isNullOffset(offset):
@@ -173,21 +173,21 @@ class OTData(object):
 # 5176.CFF.pdf  Table 2 CFF Data Types
 class CFFData(object):
     @staticmethod
-    def Offset(data, n):
+    def Offset(buf, n):
         if n == 1:
-            return ValUtil.ucharpop(data)
+            return ValUtil.ucharpop(buf)
         elif n == 2:
-            return ValUtil.ushortpop(data)
+            return ValUtil.ushortpop(buf)
         elif n == 3:
-            return ValUtil.uint24pop(data)
+            return ValUtil.uint24pop(buf)
         elif n == 4:
-            return ValUtil.ulongpop(data)
+            return ValUtil.ulongpop(buf)
         else:
             raise
 
     @staticmethod
-    def OffSize(data):
-        return ValUtil.ucharpop(data)
+    def OffSize(buf):
+        return ValUtil.ucharpop(buf)
 
 ## utility of LongDateTime
 class LongDateTime(object):
@@ -201,8 +201,8 @@ class LongDateTime(object):
 
 ## Header for OTF file
 class Header(object):
-    def __init__(self, data):
-        self.__parse(data)
+    def __init__(self, buf):
+        self.__parse(buf)
 
     @classmethod
     def get_size(cls):
@@ -218,29 +218,29 @@ class Header(object):
         print("  entry_selector= %u" % (self.__entry_selector))
         print("  range_shift   = %u" % (self.__range_shift))
 
-    def __parse(self, data):
+    def __parse(self, buf):
         global py_ver
         if py_ver == 2:
-            if data[:4] != "OTTO":
+            if buf[:4] != "OTTO":
                 # check whether TTF
-                if data[0] != "\x00" or data[1] != "\x01" or data[2] != "\x00" or data[3] != "\x00":
+                if buf[0] != "\x00" or buf[1] != "\x01" or buf[2] != "\x00" or buf[3] != "\x00":
                     raise MyError("invalid header")
         else:
-            if data[0] != ord('O') or data[1] != ord('T') or data[2] != ord('T') or data[3] != ord('O'):
+            if buf[0] != ord('O') or buf[1] != ord('T') or buf[2] != ord('T') or buf[3] != ord('O'):
                 # check whether TTF
-                if data[0] != 0 or data[1] != 1 or data[2] != 0 or data[3] != 0:
+                if buf[0] != 0 or buf[1] != 1 or buf[2] != 0 or buf[3] != 0:
                     raise MyError("invalid header")
 
-        data = data[4:]
-        self.__num_tables, data     = ValUtil.ushortpop(data)
-        self.__search_range, data   = ValUtil.ushortpop(data)
-        self.__entry_selector, data = ValUtil.ushortpop(data)
-        self.__range_shift, data    = ValUtil.ushortpop(data)
+        buf = buf[4:]
+        self.__num_tables, buf     = ValUtil.ushortpop(buf)
+        self.__search_range, buf   = ValUtil.ushortpop(buf)
+        self.__entry_selector, buf = ValUtil.ushortpop(buf)
+        self.__range_shift, buf    = ValUtil.ushortpop(buf)
 
 ## TableRecord for each table in OTF file
 class TableRecord(object):
-    def __init__(self, data):
-        self.__parse(data)
+    def __init__(self, buf):
+        self.__parse(buf)
 
     @classmethod
     def get_size(self):
@@ -265,29 +265,29 @@ class TableRecord(object):
         print("  offset        = %u" % (self.__offset))
         print("  length        = %u" % (self.__length))
 
-    def __parse(self, data):
-        self.__tag, data       = ValUtil.ulongpop(data)
-        self.__check_sum, data = ValUtil.ulongpop(data)
-        self.__offset, data    = ValUtil.ulongpop(data)
-        self.__length, data    = ValUtil.ulongpop(data)
+    def __parse(self, buf):
+        self.__tag, buf       = ValUtil.ulongpop(buf)
+        self.__check_sum, buf = ValUtil.ulongpop(buf)
+        self.__offset, buf    = ValUtil.ulongpop(buf)
+        self.__length, buf    = ValUtil.ulongpop(buf)
 
 ## Table in OTF file
 class Table(object):
-    def __init__(self, data, tag):
+    def __init__(self, buf, tag):
         self.tag = tag
-        self.parse(data)
+        self.parse(buf)
 
     def show(self):
         print("[Table(%s)]" % (self.tag))
         print("  abbreviated...")
 
-    def parse(self, data):
-        self.data = data
+    def parse(self, buf):
+        self.buf = buf
 
 ## http://www.microsoft.com/typography/otspec/head.htm
 class HeadTable(Table):
-    def __init__(self, data, tag):
-        super(HeadTable, self).__init__(data, tag)
+    def __init__(self, buf, tag):
+        super(HeadTable, self).__init__(buf, tag)
 
     def show(self):
         print("[Table(%s)]" % (self.tag))
@@ -307,58 +307,58 @@ class HeadTable(Table):
         print("  lowest_rec_ppem      = %u" % (self.lowest_rec_ppem))
         print("  font_direction_hint  = %d" % (self.font_direction_hint))
         print("  index_to_loc_format  = %d" % (self.index_to_loc_format))
-        print("  glyph_data_format    = %d" % (self.glyph_data_format))
+        print("  glyph_buf_format    = %d" % (self.glyph_buf_format))
 
-    def parse(self, data):
-        super(HeadTable, self).parse(data)
+    def parse(self, buf):
+        super(HeadTable, self).parse(buf)
 
-        self.version_number, data = ValUtil.ulongpop(data)
-        self.font_revision, data = ValUtil.ulongpop(data)
-        self.check_sum_adjustment, data = ValUtil.ulongpop(data)
-        self.magic_number, data = ValUtil.ulongpop(data)
-        self.flags, data = ValUtil.ushortpop(data)
-        self.units_per_em, data = ValUtil.ushortpop(data)
-        self.created, data = OTData.LONGDATETIME(data)
-        self.modified, data = OTData.LONGDATETIME(data)
-        self.xmin, data = ValUtil.sshortpop(data)
-        self.ymin, data = ValUtil.sshortpop(data)
-        self.xmax, data = ValUtil.sshortpop(data)
-        self.ymax, data = ValUtil.sshortpop(data)
-        self.mac_style, data = ValUtil.ushortpop(data)
-        self.lowest_rec_ppem, data = ValUtil.ushortpop(data)
-        self.font_direction_hint, data = ValUtil.sshortpop(data)
-        self.index_to_loc_format, data = ValUtil.sshortpop(data)
-        self.glyph_data_format, data = ValUtil.sshortpop(data)
+        self.version_number, buf = ValUtil.ulongpop(buf)
+        self.font_revision, buf = ValUtil.ulongpop(buf)
+        self.check_sum_adjustment, buf = ValUtil.ulongpop(buf)
+        self.magic_number, buf = ValUtil.ulongpop(buf)
+        self.flags, buf = ValUtil.ushortpop(buf)
+        self.units_per_em, buf = ValUtil.ushortpop(buf)
+        self.created, buf = OTData.LONGDATETIME(buf)
+        self.modified, buf = OTData.LONGDATETIME(buf)
+        self.xmin, buf = ValUtil.sshortpop(buf)
+        self.ymin, buf = ValUtil.sshortpop(buf)
+        self.xmax, buf = ValUtil.sshortpop(buf)
+        self.ymax, buf = ValUtil.sshortpop(buf)
+        self.mac_style, buf = ValUtil.ushortpop(buf)
+        self.lowest_rec_ppem, buf = ValUtil.ushortpop(buf)
+        self.font_direction_hint, buf = ValUtil.sshortpop(buf)
+        self.index_to_loc_format, buf = ValUtil.sshortpop(buf)
+        self.glyph_buf_format, buf = ValUtil.sshortpop(buf)
 
 ##################################################
 # name table
 
 class NameTable(Table):
-    def __init__(self, data, tag):
-        super(NameTable, self).__init__(data, tag)
+    def __init__(self, buf, tag):
+        super(NameTable, self).__init__(buf, tag)
 
-    def parse(self, data):
-        super(NameTable, self).parse(data)
+    def parse(self, buf):
+        super(NameTable, self).parse(buf)
 
-        self.format, data        = ValUtil.ushortpop(data)
-        self.count, data         = ValUtil.ushortpop(data)
-        self.stringOffset, data  = ValUtil.ushortpop(data)
+        self.format, buf        = ValUtil.ushortpop(buf)
+        self.count, buf         = ValUtil.ushortpop(buf)
+        self.stringOffset, buf  = ValUtil.ushortpop(buf)
         self.nameRecord = []
         for i in range(self.count):
-            name_record = NameRecord(data)
-            data = name_record.data
+            name_record = NameRecord(buf)
+            buf = name_record.buf
             self.nameRecord.append(name_record)
         if self.format != 0:
-            self.langTagCount, data = ValUtil.ushortpop(data)
+            self.langTagCount, buf = ValUtil.ushortpop(buf)
             for i in range(self.langTagCount):
-                lang_tag_record = LangTagRecord(data)
-                data = lang_tag_record.data
+                lang_tag_record = LangTagRecord(buf)
+                buf = lang_tag_record.buf
                 self.langTagRecord.append(lang_tag_record)
-        self.storage = data
+        self.storage = buf
 
     def show(self):
         print("[Table(%s)]" % (self.tag))
-        #print("%s" % (self.data))
+        #print("%s" % (self.buf))
         print("  format       = %d" % (self.format))
         print("  count        = %d" % (self.count))
         print("  stringOffset = %d" % (self.stringOffset))
@@ -369,17 +369,17 @@ class NameTable(Table):
                 lang_tag_record.show(self.storage)
 
 class NameRecord(object):
-    def __init__(self, data):
-        self.data = self.parse(data)
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
 
-    def parse(self, data):
-        self.platformID, data = ValUtil.ushortpop(data)
-        self.encodingID, data = ValUtil.ushortpop(data)
-        self.languageID, data = ValUtil.ushortpop(data)
-        self.nameID, data     = ValUtil.ushortpop(data)
-        self.length, data     = ValUtil.ushortpop(data)
-        self.offset, data     = ValUtil.ushortpop(data)
-        return data
+    def parse(self, buf):
+        self.platformID, buf = ValUtil.ushortpop(buf)
+        self.encodingID, buf = ValUtil.ushortpop(buf)
+        self.languageID, buf = ValUtil.ushortpop(buf)
+        self.nameID, buf     = ValUtil.ushortpop(buf)
+        self.length, buf     = ValUtil.ushortpop(buf)
+        self.offset, buf     = ValUtil.ushortpop(buf)
+        return buf
 
     def show(self, storage = None):
         print("  [NameRecord]")
@@ -394,13 +394,13 @@ class NameRecord(object):
             print("    string     = %s" % (s))
 
 class LangTagRecord(object):
-    def __init__(self, data):
-        self.data = self.parse(data)
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
 
-    def parse(self, data):
-        self.length, data     = ValUtil.ushortpop(data)
-        self.offset, data     = ValUtil.ushortpop(data)
-        return data
+    def parse(self, buf):
+        self.length, buf     = ValUtil.ushortpop(buf)
+        self.offset, buf     = ValUtil.ushortpop(buf)
+        return buf
 
     def show(self, storage = None):
         print("  [LangTagRecord]")
@@ -419,19 +419,19 @@ class LangTagRecord(object):
 ## http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5177.Type2.pdf
 ## OOps...
 class CffTable(Table):
-    def __init__(self, data, tag):
-        super(CffTable, self).__init__(data, tag)
+    def __init__(self, buf, tag):
+        super(CffTable, self).__init__(buf, tag)
 
-    def parse(self, data):
-        super(CffTable, self).parse(data)
+    def parse(self, buf):
+        super(CffTable, self).parse(buf)
 
-        # 5176.CFF.pdf  Table 1 CFF Data Layout
-        self.data_head        = data
-        self.header           = CffHeader(data)
-        self.nameIndex        = NameIndex(self.header.data)
-        self.topDictIndex     = TopDictIndex(self.nameIndex.data)
-        self.stringIndex      = CffIndexData(self.topDictIndex.data, "String")
-        self.globalSubrIndex  = CffIndexData(self.stringIndex.data, "Global Subr")
+        # 5176.CFF.pdf  Table 1 CFF Data Layout (p.8)
+        self.buf_head        = buf
+        self.header           = CffHeader(buf)
+        self.nameIndex        = NameIndex(self.header.buf)
+        self.topDictIndex     = TopDictIndex(self.nameIndex.buf)
+        self.stringIndex      = CffIndexData(self.topDictIndex.buf, "String")
+        self.globalSubrIndex  = CffIndexData(self.stringIndex.buf, "Global Subr")
         self.encodings        = None
         self.charsets         = None
         self.FDSelect         = None
@@ -444,17 +444,17 @@ class CffTable(Table):
         self.stringIndex.show()
         self.globalSubrIndex.show()
 
-# 5176.CFF.pdf  6 Header
+# 5176.CFF.pdf  6 Header (p.13)
 class CffHeader(object):
-    def __init__(self, data):
-        self.data = self.parse(data)
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
 
-    def parse(self, data):
-        self.major, data   = ValUtil.ucharpop(data)
-        self.minor, data   = ValUtil.ucharpop(data)
-        self.hdrSize, data = ValUtil.ucharpop(data)
-        self.offSize, data = CFFData.OffSize(data)
-        return data
+    def parse(self, buf):
+        self.major, buf   = ValUtil.ucharpop(buf)
+        self.minor, buf   = ValUtil.ucharpop(buf)
+        self.hdrSize, buf = ValUtil.ucharpop(buf)
+        self.offSize, buf = CFFData.OffSize(buf)
+        return buf
 
     def show(self, storage = None):
         print("  [CffHeader]")
@@ -463,7 +463,7 @@ class CffHeader(object):
         print("    hdrSize = %d" % (self.hdrSize))
         print("    offSize = %d" % (self.offSize))
 
-# 5176.CFF.pdf  4 DICT Data
+# 5176.CFF.pdf  4 DICT Data (p.9)
 # dictionary: [value][key][value][key]...
 #
 # [------------------- value -----------------------][-------- key ---------]
@@ -471,26 +471,26 @@ class CffHeader(object):
 class CffDictData(object):
     pass
 
-# 5176.CFF.pdf  5 INDEX Data
+# 5176.CFF.pdf  5 INDEX Data (p.12)
 class CffIndexData(object):
-    def __init__(self, data, name):
+    def __init__(self, buf, name):
         self.name = name
-        self.data = self.parse(data)
+        self.buf = self.parse(buf)
 
-    def parse(self, data):
-        self.count, data   = ValUtil.ushortpop(data)
+    def parse(self, buf):
+        self.count, buf   = ValUtil.ushortpop(buf)
         if self.count != 0:
-            self.offSize, data = CFFData.OffSize(data)
+            self.offSize, buf = CFFData.OffSize(buf)
             self.offset = []
             for i in range(self.count + 1):
-                val, data = CFFData.Offset(data, self.offSize)
+                val, buf = CFFData.Offset(buf, self.offSize)
                 self.offset.append(val)
-            self.objData = []
+            self.data = []
             for i in range(1, self.count + 1):
                 length = self.offset[i]-self.offset[i-1]
-                objData, data = data[:length], data[length:]
-                self.objData.append(objData)
-        return data
+                data, buf = buf[:length], buf[length:]
+                self.data.append(data)
+        return buf
 
     def show(self):
         print("  [CffIndexData(%s)]" % (self.name))
@@ -500,31 +500,31 @@ class CffIndexData(object):
             print("    offset  = {0}".format(", ".join([str(val) for val in self.offset])))
 
 class NameIndex(CffIndexData):
-    def __init__(self, data):
-        super(NameIndex, self).__init__(data, "Name")
+    def __init__(self, buf):
+        super(NameIndex, self).__init__(buf, "Name")
 
-    def parse(self, data):
-        return super(NameIndex, self).parse(data)
+    def parse(self, buf):
+        return super(NameIndex, self).parse(buf)
 
     def show(self):
         super(NameIndex, self).show()
 
         if self.count != 0:
-            print("    data    = {0}".format(", ".join(self.objData)))
+            print("    data    = {0}".format(", ".join(self.data)))
 
 class TopDictIndex(CffIndexData):
-    def __init__(self, data):
-        super(TopDictIndex, self).__init__(data, "Top DICT")
+    def __init__(self, buf):
+        super(TopDictIndex, self).__init__(buf, "Top DICT")
 
-    def parse(self, data):
-        data = super(TopDictIndex, self).parse(data)
-        return data
+    def parse(self, buf):
+        buf = super(TopDictIndex, self).parse(buf)
+        return buf
 
     def show(self):
         super(TopDictIndex, self).show()
 
         if self.count != 0:
-            print("    data    = {0}".format(", ".join(self.objData)))
+            print("    data    = {0}".format(", ".join(self.data)))
 
 # CFF
 ##################################################
@@ -533,14 +533,14 @@ class TopDictIndex(CffIndexData):
 # https://www.microsoft.com/typography/otspec/gpos.htm
 # http://partners.adobe.com/public/developer/opentype/index_table_formats2.html
 class GposTable(Table):
-    def __init__(self, data, tag):
-        super(GposTable, self).__init__(data, tag)
+    def __init__(self, buf, tag):
+        super(GposTable, self).__init__(buf, tag)
 
-    def parse(self, data):
-        super(GposTable, self).parse(data)
+    def parse(self, buf):
+        super(GposTable, self).parse(buf)
 
-        self.header     = GposHeader(data)
-        self.scriptList = ScriptList(data[self.header.ScriptList:])
+        self.header     = GposHeader(buf)
+        self.scriptList = ScriptList(buf[self.header.ScriptList:])
 
     def show(self):
         print("[Table(%s)]" % (self.tag))
@@ -548,15 +548,15 @@ class GposTable(Table):
         self.scriptList.show()
 
 class GposHeader(object):
-    def __init__(self, data):
-        self.data = self.parse(data)
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
 
-    def parse(self, data):
-        self.Version, data     = OTData.Fixed(data)
-        self.ScriptList, data  = OTData.Offset(data)
-        self.FeatureList, data = OTData.Offset(data)
-        self.LookupList, data  = OTData.Offset(data)
-        return data
+    def parse(self, buf):
+        self.Version, buf     = OTData.Fixed(buf)
+        self.ScriptList, buf  = OTData.Offset(buf)
+        self.FeatureList, buf = OTData.Offset(buf)
+        self.LookupList, buf  = OTData.Offset(buf)
+        return buf
 
     def show(self):
         print("  [GposHeader]")
@@ -568,16 +568,16 @@ class GposHeader(object):
 # https://www.microsoft.com/typography/otspec/chapter2.htm
 # http://partners.adobe.com/public/developer/opentype/index_table_formats.html
 class ScriptList(object):
-    def __init__(self, data):
-        self.data_head = data
-        self.parse(data)
+    def __init__(self, buf):
+        self.buf_head = buf
+        self.parse(buf)
 
-    def parse(self, data):
-        self.ScriptCount, data = ValUtil.ushortpop(data)
+    def parse(self, buf):
+        self.ScriptCount, buf = ValUtil.ushortpop(buf)
         self.ScriptRecord = []
         for i in range(self.ScriptCount):
-            record = ScriptRecord(data, self.data_head)
-            data = record.data
+            record = ScriptRecord(buf, self.buf_head)
+            buf = record.buf
             self.ScriptRecord.append(record)
 
     def show(self):
@@ -587,16 +587,16 @@ class ScriptList(object):
             record.show()
 
 class ScriptRecord(object):
-    def __init__(self, data, scriptListHead = None):
-        self.data = self.parse(data, scriptListHead)
+    def __init__(self, buf, scriptListHead = None):
+        self.buf = self.parse(buf, scriptListHead)
 
-    def parse(self, data, scriptListHead = None):
-        self.ScriptTag, data = OTData.Tag(data)
-        self.Script, data    = OTData.Offset(data)
+    def parse(self, buf, scriptListHead = None):
+        self.ScriptTag, buf = OTData.Tag(buf)
+        self.Script, buf    = OTData.Offset(buf)
         self.ScriptTable     = None
         if scriptListHead:
             self.ScriptTable = ScriptTable(scriptListHead[self.Script:])
-        return data
+        return buf
 
     def show(self):
         print("    [ScriptRecord]")
@@ -606,22 +606,22 @@ class ScriptRecord(object):
             self.ScriptTable.show()
 
 class ScriptTable(object):
-    def __init__(self, data):
-        self.data_head = data
-        self.parse(data)
+    def __init__(self, buf):
+        self.buf_head = buf
+        self.parse(buf)
 
-    def parse(self, data):
-        self.DefaultLangSys, data = OTData.Offset(data)
-        self.LangSysCount, data   = ValUtil.ushortpop(data)
+    def parse(self, buf):
+        self.DefaultLangSys, buf = OTData.Offset(buf)
+        self.LangSysCount, buf   = ValUtil.ushortpop(buf)
         self.DefaultLangSysTable  = None
         if not OTData.isNullOffset(self.DefaultLangSys):
-            self.DefaultLangSysTable = LangSysTable(self.data_head[self.DefaultLangSys:])
+            self.DefaultLangSysTable = LangSysTable(self.buf_head[self.DefaultLangSys:])
         self.LangSysTable = []
         for i in range(self.LangSysCount):
-            langSysTable = LangSysRecord(data, self.data_head)
-            data = langSysTable.data
+            langSysTable = LangSysRecord(buf, self.buf_head)
+            buf = langSysTable.buf
             self.LangSysTable.append(langSysTable)
-        return data
+        return buf
 
     def show(self):
         print("      [ScriptTable]")
@@ -634,16 +634,16 @@ class ScriptTable(object):
             langSysTable.show()
 
 class LangSysRecord(object):
-    def __init__(self, data, scriptTableHead = None):
-        self.data = self.parse(data, scriptTableHead)
+    def __init__(self, buf, scriptTableHead = None):
+        self.buf = self.parse(buf, scriptTableHead)
 
-    def parse(self, data, scriptTableHead):
-        self.LangSysTag, data = OTData.Tag(data)
-        self.LangSys, data    = OTData.Offset(data)
+    def parse(self, buf, scriptTableHead):
+        self.LangSysTag, buf = OTData.Tag(buf)
+        self.LangSys, buf    = OTData.Offset(buf)
         self.LangSysTable = None
         if scriptTableHead:
             self.LangSysTable = LangSysTable(scriptTableHead[self.LangSys:])
-        return data
+        return buf
 
     def show(self):
         print("        [LangSysRecord]")
@@ -653,18 +653,18 @@ class LangSysRecord(object):
             self.LangSysTable.show()
 
 class LangSysTable(object):
-    def __init__(self, data):
-        self.data = self.parse(data)
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
 
-    def parse(self, data):
-        self.LookupOrder, data     = OTData.Offset(data)
-        self.ReqFeatureIndex, data = ValUtil.ushortpop(data)
-        self.FeatureCount, data    = ValUtil.ushortpop(data)
+    def parse(self, buf):
+        self.LookupOrder, buf     = OTData.Offset(buf)
+        self.ReqFeatureIndex, buf = ValUtil.ushortpop(buf)
+        self.FeatureCount, buf    = ValUtil.ushortpop(buf)
         self.FeatureIndex = []
         for i in range(self.FeatureCount):
-            index, data = ValUtil.ushortpop(data)
+            index, buf = ValUtil.ushortpop(buf)
             self.FeatureIndex.append(index)
-        return data
+        return buf
 
     def show(self):
         print("          [LangSysTable]")
@@ -679,44 +679,44 @@ class LangSysTable(object):
 # GSUB
 
 class GsubTable(Table):
-    def __init__(self, data, tag):
-        super(GsubTable, self).__init__(data, tag)
+    def __init__(self, buf, tag):
+        super(GsubTable, self).__init__(buf, tag)
 
-    def parse(self, data):
-        super(GsubTable, self).parse(data)
+    def parse(self, buf):
+        super(GsubTable, self).parse(buf)
 
     def show(self):
         print("[Table(%s)]" % (self.tag))
-        print("%s" % (self.data))
+        print("%s" % (self.buf))
 
 # GSUB
 ##################################################
 
 ## TTF has a loca table
 class LocaTable(Table):
-    def __init__(self, data, tag):
-        super(LocaTable, self).__init__(data, tag)
+    def __init__(self, buf, tag):
+        super(LocaTable, self).__init__(buf, tag)
 
     def show(self):
         print("[Table(%s)]" % (self.tag))
         print("  abbreviated...")
 
-    def parse(self, data):
-        super(LocaTable, self).parse(data)
+    def parse(self, buf):
+        super(LocaTable, self).parse(buf)
 
 ##################################################
 
 ## TTF has a glyp table
 class GlypTable(Table):
-    def __init__(self, data, tag):
-        super(GlypTable, self).__init__(data, tag)
+    def __init__(self, buf, tag):
+        super(GlypTable, self).__init__(buf, tag)
 
     def show(self):
         print("[Table(%s)]" % (self.tag))
         print("  abbreviated...")
 
-    def parse(self, data):
-        super(GlypTable, self).parse(data)
+    def parse(self, buf):
+        super(GlypTable, self).parse(buf)
 
 ##################################################
 
@@ -743,12 +743,12 @@ class OtfParser(object):
     def __parse(self, file):
 #       print("---> " + file)
         with open(file, "rb") as infile:
-            bin_data = infile.read(12)
-            self.__header = Header(bin_data)
+            bin_buf = infile.read(12)
+            self.__header = Header(bin_buf)
             num_tables = self.__header.get_num_tables()
             for i in range(num_tables):
-                bin_data = infile.read(16)
-                self.__table_record.append( TableRecord(bin_data) )
+                bin_buf = infile.read(16)
+                self.__table_record.append( TableRecord(bin_buf) )
 
             for table_record in self.__table_record:
                 self.__create_table(table_record, infile)
@@ -758,25 +758,25 @@ class OtfParser(object):
         offset = table_record.get_offset()
         length = table_record.get_length()
         infile.seek(offset, os.SEEK_SET)
-        data = infile.read(length)
+        buf = infile.read(length)
         tag = table_record.get_tag()
 
         if tag.lower() == "cff ":
-            self.__table.append( CffTable(data, tag) )
+            self.__table.append( CffTable(buf, tag) )
         elif tag.lower() == "loca":
-            self.__table.append( LocaTable(data, tag) )
+            self.__table.append( LocaTable(buf, tag) )
         elif tag.lower() == "glyp":
-            self.__table.append( GlypTable(data, tag) )
+            self.__table.append( GlypTable(buf, tag) )
         elif tag.lower() == "gpos":
-            self.__table.append( GposTable(data, tag) )
+            self.__table.append( GposTable(buf, tag) )
         elif tag.lower() == "gsub":
-            self.__table.append( GsubTable(data, tag) )
+            self.__table.append( GsubTable(buf, tag) )
         elif tag.lower() == "head":
-            self.__table.append( HeadTable(data, tag) )
+            self.__table.append( HeadTable(buf, tag) )
         elif tag.lower() == "name":
-            self.__table.append( NameTable(data, tag) )
+            self.__table.append( NameTable(buf, tag) )
         else:
-            self.__table.append( Table(data, tag) )
+            self.__table.append( Table(buf, tag) )
 
 
 ################################################################################
