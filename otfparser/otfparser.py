@@ -189,10 +189,6 @@ class CFFData(object):
     def OffSize(buf):
         return ValUtil.ucharpop(buf)
 
-# 5176.CFF.pdf  Appendix A Standard Strings
-class SID(object):
-    nStdStrings = 391
-
 ## utility of LongDateTime
 class LongDateTime(object):
     @staticmethod
@@ -200,6 +196,1285 @@ class LongDateTime(object):
         d = datetime.datetime(1904, 1, 1)
         d += datetime.timedelta(seconds = value) #+ datetime.timedelta(hours = 9)
         return "%u/%02u/%02u %02u:%02u:%02u" % (d.year, d.month, d.day, d.hour, d.minute, d.second)
+
+class TopDictOp(object):
+    version            = 0
+    Notice             = 1
+    Copyright          = 12<<8|0
+    FullName           = 2
+    FamilyName         = 3
+    Weight             = 4
+    isFixedPitch       = 12<<8|1
+    ItalicAngle        = 12<<8|2
+    UnderlinePosition  = 12<<8|3
+    UnderlineThickness = 12<<8|4
+    PaintType          = 12<<8|5
+    CharstringType     = 12<<8|6
+    FontMatrix         = 12<<8|7
+    UniqueID           = 13
+    FontBBox           = 5
+    StrokeWidth        = 12<<8|8
+    XUID               = 14
+    charset            = 15
+    Encoding           = 16
+    CharStrings        = 17
+    Private            = 18
+    SyntheticBase      = 12<<8|20
+    PostScript         = 12<<8|21
+    BaseFontName       = 12<<8|22
+    BaseFontBlend      = 12<<8|23
+    ROS                = 12<<8|30
+    CIDFontVersion     = 12<<8|31
+    CIDFontRevision    = 12<<8|32
+    CIDFontType        = 12<<8|33
+    CIDCount           = 12<<8|34
+    UIDBase            = 12<<8|35
+    FDArray            = 12<<8|36
+    FDSelect           = 12<<8|37
+    FontName           = 12<<8|38
+
+    @classmethod
+    def to_s(cls, op):
+        if op == cls.version:
+            return "version"
+        elif op == cls.Notice:
+            return "Notice"
+        elif op == cls.Copyright:
+            return "Copyright"
+        elif op == cls.FullName:
+            return "FullName"
+        elif op == cls.FamilyName:
+            return "FamilyName"
+        elif op == cls.Weight:
+            return "Weight"
+        elif op == cls.isFixedPitch:
+            return "isFixedPitch"
+        elif op == cls.ItalicAngle:
+            return "ItalicAngle"
+        elif op == cls.UnderlinePosition:
+            return "UnderlinePosition"
+        elif op == cls.UnderlineThickness:
+            return "UnderlineThickness"
+        elif op == cls.PaintType:
+            return "PaintType"
+        elif op == cls.CharstringType:
+            return "CharstringType"
+        elif op == cls.FontMatrix:
+            return "FontMatrix"
+        elif op == cls.UniqueID:
+            return "UniqueID"
+        elif op == cls.FontBBox:
+            return "FontBBox"
+        elif op == cls.StrokeWidth:
+            return "StrokeWidth"
+        elif op == cls.XUID:
+            return "XUID"
+        elif op == cls.charset:
+            return "charset"
+        elif op == cls.Encoding:
+            return "Encoding"
+        elif op == cls.CharStrings:
+            return "CharStrings"
+        elif op == cls.Private:
+            return "Private"
+        elif op == cls.SyntheticBase:
+            return "SyntheticBase"
+        elif op == cls.PostScript:
+            return "PostScript"
+        elif op == cls.BaseFontName:
+            return "BaseFontName"
+        elif op == cls.BaseFontBlend:
+            return "BaseFontBlend"
+        elif op == cls.ROS:
+            return "ROS"
+        elif op == cls.CIDFontVersion:
+            return "CIDFontVersion"
+        elif op == cls.CIDFontRevision:
+            return "CIDFontRevision"
+        elif op == cls.CIDFontType:
+            return "CIDFontType"
+        elif op == cls.CIDCount:
+            return "CIDCount"
+        elif op == cls.UIDBase:
+            return "UIDBase"
+        elif op == cls.FDArray:
+            return "FDArray"
+        elif op == cls.FDSelect:
+            return "FDSelect"
+        elif op == cls.FontName:
+            return "FontName"
+        else:
+            return "unknown"
+
+# 5176.CFF.pdf  Appendix A Standard Strings
+class StdStr(object):
+    _notdef             = 0
+    space               = 1
+    exclam              = 2
+    quotedbl            = 3
+    numbersign          = 4
+    dollar              = 5
+    percent             = 6
+    ampersand           = 7
+    quoteright          = 8
+    parenleft           = 9
+    parenright          = 10
+    asterisk            = 11
+    plus                = 12
+    comma               = 13
+    hyphen              = 14
+    period              = 15
+    slash               = 16
+    zero                = 17
+    one                 = 18
+    two                 = 19
+    three               = 20
+    four                = 21
+    five                = 22
+    six                 = 23
+    seven               = 24
+    eight               = 25
+    nine                = 26
+    colon               = 27
+    semicolon           = 28
+    less                = 29
+    equal               = 30
+    greater             = 31
+    question            = 32
+    at                  = 33
+    A                   = 34
+    B                   = 35
+    C                   = 36
+    D                   = 37
+    E                   = 38
+    F                   = 39
+    G                   = 40
+    H                   = 41
+    I                   = 42
+    J                   = 43
+    K                   = 44
+    L                   = 45
+    M                   = 46
+    N                   = 47
+    O                   = 48
+    P                   = 49
+    Q                   = 50
+    R                   = 51
+    S                   = 52
+    T                   = 53
+    U                   = 54
+    V                   = 55
+    W                   = 56
+    X                   = 57
+    Y                   = 58
+    Z                   = 59
+    bracketleft         = 60
+    backslash           = 61
+    bracketright        = 62
+    asciicircum         = 63
+    underscore          = 64
+    quoteleft           = 65
+    a                   = 66
+    b                   = 67
+    c                   = 68
+    d                   = 69
+    e                   = 70
+    f                   = 71
+    g                   = 72
+    h                   = 73
+    i                   = 74
+    j                   = 75
+    k                   = 76
+    l                   = 77
+    m                   = 78
+    n                   = 79
+    o                   = 80
+    p                   = 81
+    q                   = 82
+    r                   = 83
+    s                   = 84
+    t                   = 85
+    u                   = 86
+    v                   = 87
+    w                   = 88
+    x                   = 89
+    y                   = 90
+    z                   = 91
+    braceleft           = 92
+    bar                 = 93
+    braceright          = 94
+    asciitilde          = 95
+    exclamdown          = 96
+    cent                = 97
+    sterling            = 98
+    fraction            = 99
+    yen                 = 100
+    florin              = 101
+    section             = 102
+    currency            = 103
+    quotesingle         = 104
+    quotedblleft        = 105
+    guillemotleft       = 106
+    guilsinglleft       = 107
+    guilsinglright      = 108
+    fi                  = 109
+    fl                  = 110
+    endash              = 111
+    dagger              = 112
+    daggerdbl           = 113
+    periodcentered      = 114
+    paragraph           = 115
+    bullet              = 116
+    quotesinglbase      = 117
+    quotedblbase        = 118
+    quotedblright       = 119
+    guillemotright      = 120
+    ellipsis            = 121
+    perthousand         = 122
+    questiondown        = 123
+    grave               = 124
+    acute               = 125
+    circumflex          = 126
+    tilde               = 127
+    macron              = 128
+    breve               = 129
+    dotaccent           = 130
+    dieresis            = 131
+    ring                = 132
+    cedilla             = 133
+    hungarumlaut        = 134
+    ogonek              = 135
+    caron               = 136
+    emdash              = 137
+    AE                  = 138
+    ordfeminine         = 139
+    Lslash              = 140
+    Oslash              = 141
+    OE                  = 142
+    ordmasculine        = 143
+    ae                  = 144
+    dotlessi            = 145
+    lslash              = 146
+    oslash              = 147
+    oe                  = 148
+    germandbls          = 149
+    onesuperior         = 150
+    logicalnot          = 151
+    mu                  = 152
+    trademark           = 153
+    Eth                 = 154
+    onehalf             = 155
+    plusminus           = 156
+    Thorn               = 157
+    onequarter          = 158
+    divide              = 159
+    brokenbar           = 160
+    degree              = 161
+    thorn               = 162
+    threequarters       = 163
+    twosuperior         = 164
+    registered          = 165
+    minus               = 166
+    eth                 = 167
+    multiply            = 168
+    threesuperior       = 169
+    copyright           = 170
+    Aacute              = 171
+    Acircumflex         = 172
+    Adieresis           = 173
+    Agrave              = 174
+    Aring               = 175
+    Atilde              = 176
+    Ccedilla            = 177
+    Eacute              = 178
+    Ecircumflex         = 179
+    Edieresis           = 180
+    Egrave              = 181
+    Iacute              = 182
+    Icircumflex         = 183
+    Idieresis           = 184
+    Igrave              = 185
+    Ntilde              = 186
+    Oacute              = 187
+    Ocircumflex         = 188
+    Odieresis           = 189
+    Ograve              = 190
+    Otilde              = 191
+    Scaron              = 192
+    Uacute              = 193
+    Ucircumflex         = 194
+    Udieresis           = 195
+    Ugrave              = 196
+    Yacute              = 197
+    Ydieresis           = 198
+    Zcaron              = 199
+    aacute              = 200
+    acircumflex         = 201
+    adieresis           = 202
+    agrave              = 203
+    aring               = 204
+    atilde              = 205
+    ccedilla            = 206
+    eacute              = 207
+    ecircumflex         = 208
+    edieresis           = 209
+    egrave              = 210
+    iacute              = 211
+    icircumflex         = 212
+    idieresis           = 213
+    igrave              = 214
+    ntilde              = 215
+    oacute              = 216
+    ocircumflex         = 217
+    odieresis           = 218
+    ograve              = 219
+    otilde              = 220
+    scaron              = 221
+    uacute              = 222
+    ucircumflex         = 223
+    udieresis           = 224
+    ugrave              = 225
+    yacute              = 226
+    ydieresis           = 227
+    zcaron              = 228
+    exclamsmall         = 229
+    Hungarumlautsmall   = 230
+    dollaroldstyle      = 231
+    dollarsuperior      = 232
+    ampersandsmall      = 233
+    Acutesmall          = 234
+    parenleftsuperior   = 235
+    parenrightsuperior  = 236
+    twodotenleader      = 237
+    onedotenleader      = 238
+    zerooldstyle        = 239
+    oneoldstyle         = 240
+    twooldstyle         = 241
+    threeoldstyle       = 242
+    fouroldstyle        = 243
+    fiveoldstyle        = 244
+    sixoldstyle         = 245
+    sevenoldstyle       = 246
+    eightoldstyle       = 247
+    nineoldstyle        = 248
+    commasuperior       = 249
+    threequartersemdash = 250
+    periodsuperior      = 251
+    questionsmall       = 252
+    asuperior           = 253
+    bsuperior           = 254
+    centsuperior        = 255
+    dsuperior           = 256
+    esuperior           = 257
+    isuperior           = 258
+    lsuperior           = 259
+    msuperior           = 260
+    nsuperior           = 261
+    osuperior           = 262
+    rsuperior           = 263
+    ssuperior           = 264
+    tsuperior           = 265
+    ff                  = 266
+    ffi                 = 267
+    ffl                 = 268
+    parenleftinferior   = 269
+    parenrightinferior  = 270
+    Circumflexsmall     = 271
+    hyphensuperior      = 272
+    Gravesmall          = 273
+    Asmall              = 274
+    Bsmall              = 275
+    Csmall              = 276
+    Dsmall              = 277
+    Esmall              = 278
+    Fsmall              = 279
+    Gsmall              = 280
+    Hsmall              = 281
+    Ismall              = 282
+    Jsmall              = 283
+    Ksmall              = 284
+    Lsmall              = 285
+    Msmall              = 286
+    Nsmall              = 287
+    Osmall              = 288
+    Psmall              = 289
+    Qsmall              = 290
+    Rsmall              = 291
+    Ssmall              = 292
+    Tsmall              = 293
+    Usmall              = 294
+    Vsmall              = 295
+    Wsmall              = 296
+    Xsmall              = 297
+    Ysmall              = 298
+    Zsmall              = 299
+    colonmonetary       = 300
+    onefitted           = 301
+    rupiah              = 302
+    Tildesmall          = 303
+    exclamdownsmall     = 304
+    centoldstyle        = 305
+    Lslashsmall         = 306
+    Scaronsmall         = 307
+    Zcaronsmall         = 308
+    Dieresissmall       = 309
+    Brevesmall          = 310
+    Caronsmall          = 311
+    Dotaccentsmall      = 312
+    Macronsmall         = 313
+    figuredash          = 314
+    hypheninferior      = 315
+    Ogoneksmall         = 316
+    Ringsmall           = 317
+    Cedillasmall        = 318
+    questiondownsmall   = 319
+    oneeighth           = 320
+    threeeighths        = 321
+    fiveeighths         = 322
+    seveneighths        = 323
+    onethird            = 324
+    twothirds           = 325
+    zerosuperior        = 326
+    foursuperior        = 327
+    fivesuperior        = 328
+    sixsuperior         = 329
+    sevensuperior       = 330
+    eightsuperior       = 331
+    ninesuperior        = 332
+    zeroinferior        = 333
+    oneinferior         = 334
+    twoinferior         = 335
+    threeinferior       = 336
+    fourinferior        = 337
+    fiveinferior        = 338
+    sixinferior         = 339
+    seveninferior       = 340
+    eightinferior       = 341
+    nineinferior        = 342
+    centinferior        = 343
+    dollarinferior      = 344
+    periodinferior      = 345
+    commainferior       = 346
+    Agravesmall         = 347
+    Aacutesmall         = 348
+    Acircumflexsmall    = 349
+    Atildesmall         = 350
+    Adieresissmall      = 351
+    Aringsmall          = 352
+    AEsmall             = 353
+    Ccedillasmall       = 354
+    Egravesmall         = 355
+    Eacutesmall         = 356
+    Ecircumflexsmall    = 357
+    Edieresissmall      = 358
+    Igravesmall         = 359
+    Iacutesmall         = 360
+    Icircumflexsmall    = 361
+    Idieresissmall      = 362
+    Ethsmall            = 363
+    Ntildesmall         = 364
+    Ogravesmall         = 365
+    Oacutesmall         = 366
+    Ocircumflexsmall    = 367
+    Otildesmall         = 368
+    Odieresissmall      = 369
+    OEsmall             = 370
+    Oslashsmall         = 371
+    Ugravesmall         = 372
+    Uacutesmall         = 373
+    Ucircumflexsmall    = 374
+    Udieresissmall      = 375
+    Yacutesmall         = 376
+    Thornsmall          = 377
+    Ydieresissmall      = 378
+    Black               = 383
+    Bold                = 384
+    Book                = 385
+    Light               = 386
+    Medium              = 387
+    Regular             = 388
+    Roman               = 389
+    Semibold            = 390
+    nStdStr             = 391
+
+    @classmethod
+    def to_s(cls, sid):
+        if sid == cls._notdef:
+            return ".notdef"
+        elif sid == cls.space:
+            return "space"
+        elif sid == cls.exclam:
+            return "exclam"
+        elif sid == cls.quotedbl:
+            return "quotedbl"
+        elif sid == cls.numbersign:
+            return "numbersign"
+        elif sid == cls.dollar:
+            return "dollar"
+        elif sid == cls.percent:
+            return "percent"
+        elif sid == cls.ampersand:
+            return "ampersand"
+        elif sid == cls.quoteright:
+            return "quoteright"
+        elif sid == cls.parenleft:
+            return "parenleft"
+        elif sid == cls.parenright:
+            return "parenright"
+        elif sid == cls.asterisk:
+            return "asterisk"
+        elif sid == cls.plus:
+            return "plus"
+        elif sid == cls.comma:
+            return "comma"
+        elif sid == cls.hyphen:
+            return "hyphen"
+        elif sid == cls.period:
+            return "period"
+        elif sid == cls.slash:
+            return "slash"
+        elif sid == cls.zero:
+            return "zero"
+        elif sid == cls.one:
+            return "one"
+        elif sid == cls.two:
+            return "two"
+        elif sid == cls.three:
+            return "three"
+        elif sid == cls.four:
+            return "four"
+        elif sid == cls.five:
+            return "five"
+        elif sid == cls.six:
+            return "six"
+        elif sid == cls.seven:
+            return "seven"
+        elif sid == cls.eight:
+            return "eight"
+        elif sid == cls.nine:
+            return "nine"
+        elif sid == cls.colon:
+            return "colon"
+        elif sid == cls.semicolon:
+            return "semicolon"
+        elif sid == cls.less:
+            return "less"
+        elif sid == cls.equal:
+            return "equal"
+        elif sid == cls.greater:
+            return "greater"
+        elif sid == cls.question:
+            return "question"
+        elif sid == cls.at:
+            return "at"
+        elif sid == cls.A:
+            return "A"
+        elif sid == cls.B:
+            return "B"
+        elif sid == cls.C:
+            return "C"
+        elif sid == cls.D:
+            return "D"
+        elif sid == cls.E:
+            return "E"
+        elif sid == cls.F:
+            return "F"
+        elif sid == cls.G:
+            return "G"
+        elif sid == cls.H:
+            return "H"
+        elif sid == cls.I:
+            return "I"
+        elif sid == cls.J:
+            return "J"
+        elif sid == cls.K:
+            return "K"
+        elif sid == cls.L:
+            return "L"
+        elif sid == cls.M:
+            return "M"
+        elif sid == cls.N:
+            return "N"
+        elif sid == cls.O:
+            return "O"
+        elif sid == cls.P:
+            return "P"
+        elif sid == cls.Q:
+            return "Q"
+        elif sid == cls.R:
+            return "R"
+        elif sid == cls.S:
+            return "S"
+        elif sid == cls.T:
+            return "T"
+        elif sid == cls.U:
+            return "U"
+        elif sid == cls.V:
+            return "V"
+        elif sid == cls.W:
+            return "W"
+        elif sid == cls.X:
+            return "X"
+        elif sid == cls.Y:
+            return "Y"
+        elif sid == cls.Z:
+            return "Z"
+        elif sid == cls.bracketleft:
+            return "bracketleft"
+        elif sid == cls.backslash:
+            return "backslash"
+        elif sid == cls.bracketright:
+            return "bracketright"
+        elif sid == cls.asciicircum:
+            return "asciicircum"
+        elif sid == cls.underscore:
+            return "underscore"
+        elif sid == cls.quoteleft:
+            return "quoteleft"
+        elif sid == cls.a:
+            return "a"
+        elif sid == cls.b:
+            return "b"
+        elif sid == cls.c:
+            return "c"
+        elif sid == cls.d:
+            return "d"
+        elif sid == cls.e:
+            return "e"
+        elif sid == cls.f:
+            return "f"
+        elif sid == cls.g:
+            return "g"
+        elif sid == cls.h:
+            return "h"
+        elif sid == cls.i:
+            return "i"
+        elif sid == cls.j:
+            return "j"
+        elif sid == cls.k:
+            return "k"
+        elif sid == cls.l:
+            return "l"
+        elif sid == cls.m:
+            return "m"
+        elif sid == cls.n:
+            return "n"
+        elif sid == cls.o:
+            return "o"
+        elif sid == cls.p:
+            return "p"
+        elif sid == cls.q:
+            return "q"
+        elif sid == cls.r:
+            return "r"
+        elif sid == cls.s:
+            return "s"
+        elif sid == cls.t:
+            return "t"
+        elif sid == cls.u:
+            return "u"
+        elif sid == cls.v:
+            return "v"
+        elif sid == cls.w:
+            return "w"
+        elif sid == cls.x:
+            return "x"
+        elif sid == cls.y:
+            return "y"
+        elif sid == cls.z:
+            return "z"
+        elif sid == cls.braceleft:
+            return "braceleft"
+        elif sid == cls.bar:
+            return "bar"
+        elif sid == cls.braceright:
+            return "braceright"
+        elif sid == cls.asciitilde:
+            return "asciitilde"
+        elif sid == cls.exclamdown:
+            return "exclamdown"
+        elif sid == cls.cent:
+            return "cent"
+        elif sid == cls.sterling:
+            return "sterling"
+        elif sid == cls.fraction:
+            return "fraction"
+        elif sid == cls.yen:
+            return "yen"
+        elif sid == cls.florin:
+            return "florin"
+        elif sid == cls.section:
+            return "section"
+        elif sid == cls.currency:
+            return "currency"
+        elif sid == cls.quotesingle:
+            return "quotesingle"
+        elif sid == cls.quotedblleft:
+            return "quotedblleft"
+        elif sid == cls.guillemotleft:
+            return "guillemotleft"
+        elif sid == cls.guilsinglleft:
+            return "guilsinglleft"
+        elif sid == cls.guilsinglright:
+            return "guilsinglright"
+        elif sid == cls.fi:
+            return "fi"
+        elif sid == cls.fl:
+            return "fl"
+        elif sid == cls.endash:
+            return "endash"
+        elif sid == cls.dagger:
+            return "dagger"
+        elif sid == cls.daggerdbl:
+            return "daggerdbl"
+        elif sid == cls.periodcentered:
+            return "periodcentered"
+        elif sid == cls.paragraph:
+            return "paragraph"
+        elif sid == cls.bullet:
+            return "bullet"
+        elif sid == cls.quotesinglbase:
+            return "quotesinglbase"
+        elif sid == cls.quotedblbase:
+            return "quotedblbase"
+        elif sid == cls.quotedblright:
+            return "quotedblright"
+        elif sid == cls.guillemotright:
+            return "guillemotright"
+        elif sid == cls.ellipsis:
+            return "ellipsis"
+        elif sid == cls.perthousand:
+            return "perthousand"
+        elif sid == cls.questiondown:
+            return "questiondown"
+        elif sid == cls.grave:
+            return "grave"
+        elif sid == cls.acute:
+            return "acute"
+        elif sid == cls.circumflex:
+            return "circumflex"
+        elif sid == cls.tilde:
+            return "tilde"
+        elif sid == cls.macron:
+            return "macron"
+        elif sid == cls.breve:
+            return "breve"
+        elif sid == cls.dotaccent:
+            return "dotaccent"
+        elif sid == cls.dieresis:
+            return "dieresis"
+        elif sid == cls.ring:
+            return "ring"
+        elif sid == cls.cedilla:
+            return "cedilla"
+        elif sid == cls.hungarumlaut:
+            return "hungarumlaut"
+        elif sid == cls.ogonek:
+            return "ogonek"
+        elif sid == cls.caron:
+            return "caron"
+        elif sid == cls.emdash:
+            return "emdash"
+        elif sid == cls.AE:
+            return "AE"
+        elif sid == cls.ordfeminine:
+            return "ordfeminine"
+        elif sid == cls.Lslash:
+            return "Lslash"
+        elif sid == cls.Oslash:
+            return "Oslash"
+        elif sid == cls.OE:
+            return "OE"
+        elif sid == cls.ordmasculine:
+            return "ordmasculine"
+        elif sid == cls.ae:
+            return "ae"
+        elif sid == cls.dotlessi:
+            return "dotlessi"
+        elif sid == cls.lslash:
+            return "lslash"
+        elif sid == cls.oslash:
+            return "oslash"
+        elif sid == cls.oe:
+            return "oe"
+        elif sid == cls.germandbls:
+            return "germandbls"
+        elif sid == cls.onesuperior:
+            return "onesuperior"
+        elif sid == cls.logicalnot:
+            return "logicalnot"
+        elif sid == cls.mu:
+            return "mu"
+        elif sid == cls.trademark:
+            return "trademark"
+        elif sid == cls.Eth:
+            return "Eth"
+        elif sid == cls.onehalf:
+            return "onehalf"
+        elif sid == cls.plusminus:
+            return "plusminus"
+        elif sid == cls.Thorn:
+            return "Thorn"
+        elif sid == cls.onequarter:
+            return "onequarter"
+        elif sid == cls.divide:
+            return "divide"
+        elif sid == cls.brokenbar:
+            return "brokenbar"
+        elif sid == cls.degree:
+            return "degree"
+        elif sid == cls.thorn:
+            return "thorn"
+        elif sid == cls.threequarters:
+            return "threequarters"
+        elif sid == cls.twosuperior:
+            return "twosuperior"
+        elif sid == cls.registered:
+            return "registered"
+        elif sid == cls.minus:
+            return "minus"
+        elif sid == cls.eth:
+            return "eth"
+        elif sid == cls.multiply:
+            return "multiply"
+        elif sid == cls.threesuperior:
+            return "threesuperior"
+        elif sid == cls.copyright:
+            return "copyright"
+        elif sid == cls.Aacute:
+            return "Aacute"
+        elif sid == cls.Acircumflex:
+            return "Acircumflex"
+        elif sid == cls.Adieresis:
+            return "Adieresis"
+        elif sid == cls.Agrave:
+            return "Agrave"
+        elif sid == cls.Aring:
+            return "Aring"
+        elif sid == cls.Atilde:
+            return "Atilde"
+        elif sid == cls.Ccedilla:
+            return "Ccedilla"
+        elif sid == cls.Eacute:
+            return "Eacute"
+        elif sid == cls.Ecircumflex:
+            return "Ecircumflex"
+        elif sid == cls.Edieresis:
+            return "Edieresis"
+        elif sid == cls.Egrave:
+            return "Egrave"
+        elif sid == cls.Iacute:
+            return "Iacute"
+        elif sid == cls.Icircumflex:
+            return "Icircumflex"
+        elif sid == cls.Idieresis:
+            return "Idieresis"
+        elif sid == cls.Igrave:
+            return "Igrave"
+        elif sid == cls.Ntilde:
+            return "Ntilde"
+        elif sid == cls.Oacute:
+            return "Oacute"
+        elif sid == cls.Ocircumflex:
+            return "Ocircumflex"
+        elif sid == cls.Odieresis:
+            return "Odieresis"
+        elif sid == cls.Ograve:
+            return "Ograve"
+        elif sid == cls.Otilde:
+            return "Otilde"
+        elif sid == cls.Scaron:
+            return "Scaron"
+        elif sid == cls.Uacute:
+            return "Uacute"
+        elif sid == cls.Ucircumflex:
+            return "Ucircumflex"
+        elif sid == cls.Udieresis:
+            return "Udieresis"
+        elif sid == cls.Ugrave:
+            return "Ugrave"
+        elif sid == cls.Yacute:
+            return "Yacute"
+        elif sid == cls.Ydieresis:
+            return "Ydieresis"
+        elif sid == cls.Zcaron:
+            return "Zcaron"
+        elif sid == cls.aacute:
+            return "aacute"
+        elif sid == cls.acircumflex:
+            return "acircumflex"
+        elif sid == cls.adieresis:
+            return "adieresis"
+        elif sid == cls.agrave:
+            return "agrave"
+        elif sid == cls.aring:
+            return "aring"
+        elif sid == cls.atilde:
+            return "atilde"
+        elif sid == cls.ccedilla:
+            return "ccedilla"
+        elif sid == cls.eacute:
+            return "eacute"
+        elif sid == cls.ecircumflex:
+            return "ecircumflex"
+        elif sid == cls.edieresis:
+            return "edieresis"
+        elif sid == cls.egrave:
+            return "egrave"
+        elif sid == cls.iacute:
+            return "iacute"
+        elif sid == cls.icircumflex:
+            return "icircumflex"
+        elif sid == cls.idieresis:
+            return "idieresis"
+        elif sid == cls.igrave:
+            return "igrave"
+        elif sid == cls.ntilde:
+            return "ntilde"
+        elif sid == cls.oacute:
+            return "oacute"
+        elif sid == cls.ocircumflex:
+            return "ocircumflex"
+        elif sid == cls.odieresis:
+            return "odieresis"
+        elif sid == cls.ograve:
+            return "ograve"
+        elif sid == cls.otilde:
+            return "otilde"
+        elif sid == cls.scaron:
+            return "scaron"
+        elif sid == cls.uacute:
+            return "uacute"
+        elif sid == cls.ucircumflex:
+            return "ucircumflex"
+        elif sid == cls.udieresis:
+            return "udieresis"
+        elif sid == cls.ugrave:
+            return "ugrave"
+        elif sid == cls.yacute:
+            return "yacute"
+        elif sid == cls.ydieresis:
+            return "ydieresis"
+        elif sid == cls.zcaron:
+            return "zcaron"
+        elif sid == cls.exclamsmall:
+            return "exclamsmall"
+        elif sid == cls.Hungarumlautsmall:
+            return "Hungarumlautsmall"
+        elif sid == cls.dollaroldstyle:
+            return "dollaroldstyle"
+        elif sid == cls.dollarsuperior:
+            return "dollarsuperior"
+        elif sid == cls.ampersandsmall:
+            return "ampersandsmall"
+        elif sid == cls.Acutesmall:
+            return "Acutesmall"
+        elif sid == cls.parenleftsuperior:
+            return "parenleftsuperior"
+        elif sid == cls.parenrightsuperior:
+            return "parenrightsuperior"
+        elif sid == cls.twodotenleader:
+            return "twodotenleader"
+        elif sid == cls.onedotenleader:
+            return "onedotenleader"
+        elif sid == cls.zerooldstyle:
+            return "zerooldstyle"
+        elif sid == cls.oneoldstyle:
+            return "oneoldstyle"
+        elif sid == cls.twooldstyle:
+            return "twooldstyle"
+        elif sid == cls.threeoldstyle:
+            return "threeoldstyle"
+        elif sid == cls.fouroldstyle:
+            return "fouroldstyle"
+        elif sid == cls.fiveoldstyle:
+            return "fiveoldstyle"
+        elif sid == cls.sixoldstyle:
+            return "sixoldstyle"
+        elif sid == cls.sevenoldstyle:
+            return "sevenoldstyle"
+        elif sid == cls.eightoldstyle:
+            return "eightoldstyle"
+        elif sid == cls.nineoldstyle:
+            return "nineoldstyle"
+        elif sid == cls.commasuperior:
+            return "commasuperior"
+        elif sid == cls.threequartersemdash:
+            return "threequartersemdash"
+        elif sid == cls.periodsuperior:
+            return "periodsuperior"
+        elif sid == cls.questionsmall:
+            return "questionsmall"
+        elif sid == cls.asuperior:
+            return "asuperior"
+        elif sid == cls.bsuperior:
+            return "bsuperior"
+        elif sid == cls.centsuperior:
+            return "centsuperior"
+        elif sid == cls.dsuperior:
+            return "dsuperior"
+        elif sid == cls.esuperior:
+            return "esuperior"
+        elif sid == cls.isuperior:
+            return "isuperior"
+        elif sid == cls.lsuperior:
+            return "lsuperior"
+        elif sid == cls.msuperior:
+            return "msuperior"
+        elif sid == cls.nsuperior:
+            return "nsuperior"
+        elif sid == cls.osuperior:
+            return "osuperior"
+        elif sid == cls.rsuperior:
+            return "rsuperior"
+        elif sid == cls.ssuperior:
+            return "ssuperior"
+        elif sid == cls.tsuperior:
+            return "tsuperior"
+        elif sid == cls.ff:
+            return "ff"
+        elif sid == cls.ffi:
+            return "ffi"
+        elif sid == cls.ffl:
+            return "ffl"
+        elif sid == cls.parenleftinferior:
+            return "parenleftinferior"
+        elif sid == cls.parenrightinferior:
+            return "parenrightinferior"
+        elif sid == cls.Circumflexsmall:
+            return "Circumflexsmall"
+        elif sid == cls.hyphensuperior:
+            return "hyphensuperior"
+        elif sid == cls.Gravesmall:
+            return "Gravesmall"
+        elif sid == cls.Asmall:
+            return "Asmall"
+        elif sid == cls.Bsmall:
+            return "Bsmall"
+        elif sid == cls.Csmall:
+            return "Csmall"
+        elif sid == cls.Dsmall:
+            return "Dsmall"
+        elif sid == cls.Esmall:
+            return "Esmall"
+        elif sid == cls.Fsmall:
+            return "Fsmall"
+        elif sid == cls.Gsmall:
+            return "Gsmall"
+        elif sid == cls.Hsmall:
+            return "Hsmall"
+        elif sid == cls.Ismall:
+            return "Ismall"
+        elif sid == cls.Jsmall:
+            return "Jsmall"
+        elif sid == cls.Ksmall:
+            return "Ksmall"
+        elif sid == cls.Lsmall:
+            return "Lsmall"
+        elif sid == cls.Msmall:
+            return "Msmall"
+        elif sid == cls.Nsmall:
+            return "Nsmall"
+        elif sid == cls.Osmall:
+            return "Osmall"
+        elif sid == cls.Psmall:
+            return "Psmall"
+        elif sid == cls.Qsmall:
+            return "Qsmall"
+        elif sid == cls.Rsmall:
+            return "Rsmall"
+        elif sid == cls.Ssmall:
+            return "Ssmall"
+        elif sid == cls.Tsmall:
+            return "Tsmall"
+        elif sid == cls.Usmall:
+            return "Usmall"
+        elif sid == cls.Vsmall:
+            return "Vsmall"
+        elif sid == cls.Wsmall:
+            return "Wsmall"
+        elif sid == cls.Xsmall:
+            return "Xsmall"
+        elif sid == cls.Ysmall:
+            return "Ysmall"
+        elif sid == cls.Zsmall:
+            return "Zsmall"
+        elif sid == cls.colonmonetary:
+            return "colonmonetary"
+        elif sid == cls.onefitted:
+            return "onefitted"
+        elif sid == cls.rupiah:
+            return "rupiah"
+        elif sid == cls.Tildesmall:
+            return "Tildesmall"
+        elif sid == cls.exclamdownsmall:
+            return "exclamdownsmall"
+        elif sid == cls.centoldstyle:
+            return "centoldstyle"
+        elif sid == cls.Lslashsmall:
+            return "Lslashsmall"
+        elif sid == cls.Scaronsmall:
+            return "Scaronsmall"
+        elif sid == cls.Zcaronsmall:
+            return "Zcaronsmall"
+        elif sid == cls.Dieresissmall:
+            return "Dieresissmall"
+        elif sid == cls.Brevesmall:
+            return "Brevesmall"
+        elif sid == cls.Caronsmall:
+            return "Caronsmall"
+        elif sid == cls.Dotaccentsmall:
+            return "Dotaccentsmall"
+        elif sid == cls.Macronsmall:
+            return "Macronsmall"
+        elif sid == cls.figuredash:
+            return "figuredash"
+        elif sid == cls.hypheninferior:
+            return "hypheninferior"
+        elif sid == cls.Ogoneksmall:
+            return "Ogoneksmall"
+        elif sid == cls.Ringsmall:
+            return "Ringsmall"
+        elif sid == cls.Cedillasmall:
+            return "Cedillasmall"
+        elif sid == cls.questiondownsmall:
+            return "questiondownsmall"
+        elif sid == cls.oneeighth:
+            return "oneeighth"
+        elif sid == cls.threeeighths:
+            return "threeeighths"
+        elif sid == cls.fiveeighths:
+            return "fiveeighths"
+        elif sid == cls.seveneighths:
+            return "seveneighths"
+        elif sid == cls.onethird:
+            return "onethird"
+        elif sid == cls.twothirds:
+            return "twothirds"
+        elif sid == cls.zerosuperior:
+            return "zerosuperior"
+        elif sid == cls.foursuperior:
+            return "foursuperior"
+        elif sid == cls.fivesuperior:
+            return "fivesuperior"
+        elif sid == cls.sixsuperior:
+            return "sixsuperior"
+        elif sid == cls.sevensuperior:
+            return "sevensuperior"
+        elif sid == cls.eightsuperior:
+            return "eightsuperior"
+        elif sid == cls.ninesuperior:
+            return "ninesuperior"
+        elif sid == cls.zeroinferior:
+            return "zeroinferior"
+        elif sid == cls.oneinferior:
+            return "oneinferior"
+        elif sid == cls.twoinferior:
+            return "twoinferior"
+        elif sid == cls.threeinferior:
+            return "threeinferior"
+        elif sid == cls.fourinferior:
+            return "fourinferior"
+        elif sid == cls.fiveinferior:
+            return "fiveinferior"
+        elif sid == cls.sixinferior:
+            return "sixinferior"
+        elif sid == cls.seveninferior:
+            return "seveninferior"
+        elif sid == cls.eightinferior:
+            return "eightinferior"
+        elif sid == cls.nineinferior:
+            return "nineinferior"
+        elif sid == cls.centinferior:
+            return "centinferior"
+        elif sid == cls.dollarinferior:
+            return "dollarinferior"
+        elif sid == cls.periodinferior:
+            return "periodinferior"
+        elif sid == cls.commainferior:
+            return "commainferior"
+        elif sid == cls.Agravesmall:
+            return "Agravesmall"
+        elif sid == cls.Aacutesmall:
+            return "Aacutesmall"
+        elif sid == cls.Acircumflexsmall:
+            return "Acircumflexsmall"
+        elif sid == cls.Atildesmall:
+            return "Atildesmall"
+        elif sid == cls.Adieresissmall:
+            return "Adieresissmall"
+        elif sid == cls.Aringsmall:
+            return "Aringsmall"
+        elif sid == cls.AEsmall:
+            return "AEsmall"
+        elif sid == cls.Ccedillasmall:
+            return "Ccedillasmall"
+        elif sid == cls.Egravesmall:
+            return "Egravesmall"
+        elif sid == cls.Eacutesmall:
+            return "Eacutesmall"
+        elif sid == cls.Ecircumflexsmall:
+            return "Ecircumflexsmall"
+        elif sid == cls.Edieresissmall:
+            return "Edieresissmall"
+        elif sid == cls.Igravesmall:
+            return "Igravesmall"
+        elif sid == cls.Iacutesmall:
+            return "Iacutesmall"
+        elif sid == cls.Icircumflexsmall:
+            return "Icircumflexsmall"
+        elif sid == cls.Idieresissmall:
+            return "Idieresissmall"
+        elif sid == cls.Ethsmall:
+            return "Ethsmall"
+        elif sid == cls.Ntildesmall:
+            return "Ntildesmall"
+        elif sid == cls.Ogravesmall:
+            return "Ogravesmall"
+        elif sid == cls.Oacutesmall:
+            return "Oacutesmall"
+        elif sid == cls.Ocircumflexsmall:
+            return "Ocircumflexsmall"
+        elif sid == cls.Otildesmall:
+            return "Otildesmall"
+        elif sid == cls.Odieresissmall:
+            return "Odieresissmall"
+        elif sid == cls.OEsmall:
+            return "OEsmall"
+        elif sid == cls.Oslashsmall:
+            return "Oslashsmall"
+        elif sid == cls.Ugravesmall:
+            return "Ugravesmall"
+        elif sid == cls.Uacutesmall:
+            return "Uacutesmall"
+        elif sid == cls.Ucircumflexsmall:
+            return "Ucircumflexsmall"
+        elif sid == cls.Udieresissmall:
+            return "Udieresissmall"
+        elif sid == cls.Yacutesmall:
+            return "Yacutesmall"
+        elif sid == cls.Thornsmall:
+            return "Thornsmall"
+        elif sid == cls.Ydieresissmall:
+            return "Ydieresissmall"
+        elif sid == cls.Black:
+            return "Black"
+        elif sid == cls.Bold:
+            return "Bold"
+        elif sid == cls.Book:
+            return "Book"
+        elif sid == cls.Light:
+            return "Light"
+        elif sid == cls.Medium:
+            return "Medium"
+        elif sid == cls.Regular:
+            return "Regular"
+        elif sid == cls.Roman:
+            return "Roman"
+        elif sid == cls.Semibold:
+            return "Semibold"
+        else:
+            return "unknown"
 
 ##################################################
 
@@ -430,7 +1705,7 @@ class CffTable(Table):
         super(CffTable, self).parse(buf)
 
         # 5176.CFF.pdf  Table 1 CFF Data Layout (p.8)
-        self.buf_head        = buf
+        self.buf_head         = buf # the top of the CFF buffer
         self.header           = CffHeader(buf)
         buf = self.header.buf
         self.nameIndex        = NameIndex(buf)
@@ -440,8 +1715,21 @@ class CffTable(Table):
         self.stringIndex      = CffINDEXData(buf, "String")
         buf = self.stringIndex.buf
         self.globalSubrIndex  = CffINDEXData(buf, "Global Subr")
+        buf = self.globalSubrIndex.buf
+        # XXX: currently support only one font, so directly use cffDict[0]
+        cffDict = self.topDictIndex.cffDict[0]
         self.encodings        = None
+        if TopDictOp.Encoding in cffDict:
+            offset = cffDict[TopDictOp.Encoding][0]
+            self.encodings    = CffEncodings(self.buf_head[offset:])
+        self.charStringsIndex = None
+        if TopDictOp.CharStrings in cffDict:
+            offset = cffDict[TopDictOp.CharStrings][0]
+            self.charStringsIndex = CffINDEXData(self.buf_head[offset:], "CharStrings")
         self.charsets         = None
+        if TopDictOp.charset in cffDict:
+            offset = cffDict[TopDictOp.charset][0]
+            self.charsets     = CffCharsets(self.buf_head[offset:], self.charStringsIndex.count)
         self.FDSelect         = None
 
     def show(self):
@@ -451,6 +1739,12 @@ class CffTable(Table):
         self.topDictIndex.show(self.stringIndex)
         self.stringIndex.show()
         self.globalSubrIndex.show()
+        if self.encodings:
+            self.encodings.show()
+        if self.charStringsIndex:
+            self.charStringsIndex.show()
+        if self.charsets:
+            self.charsets.show()
 
 # 5176.CFF.pdf  6 Header (p.13)
 class CffHeader(object):
@@ -478,11 +1772,28 @@ class CffHeader(object):
 # [operand(s); variable-size; integer or real values][operator; 1- or 2-byte]
 class CffDictData(object):
     def __init__(self, buf):
-        self.dict = []
+        self._dict = {}
         self.buf  = self.parse(buf)
 
+    # like a dict
+    def __setitem__(self, key, value):
+        self._dict[key] = value
+    def __getitem__(self, key):
+        return self._dict[key]
+    def __delitem__(self, key):
+        del self._dict[key]
+    def __iter__(self):
+        return iter(self._dict)
+    def __len__(self):
+        return len(self._dict)
+    def __contains__(self, item):
+        return item in self._dict
+    def __str__(self):
+        return str(self._dict)
+    def has_key(self, key):
+        return self._dict.has_key(key)
     def items(self):
-        return self.dict
+        return self._dict.items()
 
     def parse(self, buf):
         operands = []
@@ -490,7 +1801,8 @@ class CffDictData(object):
             b = ValUtil.uchar(buf)
             if CffDictData._is_operator(b):
                 operator, buf = CffDictData._operator(buf)
-                self.dict.append( (operator, operands) )
+                # self.dict.append( (operator, operands) )
+                self._dict[operator] = operands
                 operands = []
             else:
                 operand, buf = CffDictData._operand(buf)
@@ -629,121 +1941,137 @@ class TopDictIndex(CffINDEXData):
                         if k == TopDictOp.version or k == TopDictOp.Notice or k == TopDictOp.Copyright \
                            or k == TopDictOp.FullName or k == TopDictOp.FamilyName or k == TopDictOp.Weight \
                            or k == TopDictOp.PostScript or k == TopDictOp.BaseFontName or k == TopDictOp.FontName:
-                            print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(k), v, stringIndex.data[v[0] - SID.nStdStrings]))
+                            s = stringIndex.data[v[0] - StdStr.nStdStr] if v[0] >= StdStr.nStdStr else StdStr.to_s(v[0])
+                            print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(k), v, s))
                         elif k == TopDictOp.ROS:
-                            print("    {0} = {1} << {2}-{3}-{4} >>".format(TopDictOp.to_s(k), v,
-                                stringIndex.data[v[0] - SID.nStdStrings], stringIndex.data[v[1] - SID.nStdStrings], v[2]))
+                            s0 = stringIndex.data[v[0] - StdStr.nStdStr] if v[0] >= StdStr.nStdStr else StdStr.to_s(v[0])
+                            s1 = stringIndex.data[v[1] - StdStr.nStdStr] if v[1] >= StdStr.nStdStr else StdStr.to_s(v[1])
+                            print("    {0} = {1} << {2}-{3}-{4} >>".format(TopDictOp.to_s(k), v, s0, s1, v[2]))
                         else:
                             print("    {0} = {1}".format(TopDictOp.to_s(k), v))
 
-class TopDictOp(object):
-    version            = 0
-    Notice             = 1
-    Copyright          = 12<<8|0
-    FullName           = 2
-    FamilyName         = 3
-    Weight             = 4
-    isFixedPitch       = 12<<8|1
-    ItalicAngle        = 12<<8|2
-    UnderlinePosition  = 12<<8|3
-    UnderlineThickness = 12<<8|4
-    PaintType          = 12<<8|5
-    CharstringType     = 12<<8|6
-    FontMatrix         = 12<<8|7
-    UniqueID           = 13
-    FontBBox           = 5
-    StrokeWidth        = 12<<8|8
-    XUID               = 14
-    charset            = 15
-    Encoding           = 16
-    CharStrings        = 17
-    Private            = 18
-    SyntheticBase      = 12<<8|20
-    PostScript         = 12<<8|21
-    BaseFontName       = 12<<8|22
-    BaseFontBlend      = 12<<8|23
-    ROS                = 12<<8|30
-    CIDFontVersion     = 12<<8|31
-    CIDFontRevision    = 12<<8|32
-    CIDFontType        = 12<<8|33
-    CIDCount           = 12<<8|34
-    UIDBase            = 12<<8|35
-    FDArray            = 12<<8|36
-    FDSelect           = 12<<8|37
-    FontName           = 12<<8|38
+class CffEncodings(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
 
-    @classmethod
-    def to_s(cls, op):
-        if op == cls.version:
-            return "version"
-        elif op == cls.Notice:
-            return "Notice"
-        elif op == cls.Copyright:
-            return "Copyright"
-        elif op == cls.FullName:
-            return "FullName"
-        elif op == cls.FamilyName:
-            return "FamilyName"
-        elif op == cls.Weight:
-            return "Weight"
-        elif op == cls.isFixedPitch:
-            return "isFixedPitch"
-        elif op == cls.ItalicAngle:
-            return "ItalicAngle"
-        elif op == cls.UnderlinePosition:
-            return "UnderlinePosition"
-        elif op == cls.UnderlineThickness:
-            return "UnderlineThickness"
-        elif op == cls.PaintType:
-            return "PaintType"
-        elif op == cls.CharstringType:
-            return "CharstringType"
-        elif op == cls.FontMatrix:
-            return "FontMatrix"
-        elif op == cls.UniqueID:
-            return "UniqueID"
-        elif op == cls.FontBBox:
-            return "FontBBox"
-        elif op == cls.StrokeWidth:
-            return "StrokeWidth"
-        elif op == cls.XUID:
-            return "XUID"
-        elif op == cls.charset:
-            return "charset"
-        elif op == cls.Encoding:
-            return "Encoding"
-        elif op == cls.CharStrings:
-            return "CharStrings"
-        elif op == cls.Private:
-            return "Private"
-        elif op == cls.SyntheticBase:
-            return "SyntheticBase"
-        elif op == cls.PostScript:
-            return "PostScript"
-        elif op == cls.BaseFontName:
-            return "BaseFontName"
-        elif op == cls.BaseFontBlend:
-            return "BaseFontBlend"
-        elif op == cls.ROS:
-            return "ROS"
-        elif op == cls.CIDFontVersion:
-            return "CIDFontVersion"
-        elif op == cls.CIDFontRevision:
-            return "CIDFontRevision"
-        elif op == cls.CIDFontType:
-            return "CIDFontType"
-        elif op == cls.CIDCount:
-            return "CIDCount"
-        elif op == cls.UIDBase:
-            return "UIDBase"
-        elif op == cls.FDArray:
-            return "FDArray"
-        elif op == cls.FDSelect:
-            return "FDSelect"
-        elif op == cls.FontName:
-            return "FontName"
+    def parse(self, buf):
+        self.format, buf = ValUtil.ucharpop(buf)
+        if self.format == 0:
+            self.nCodes, buf = ValUtil.ucharpop(buf)
+            self.code = []
+            for i in range(self.nCodes):
+                code, buf = ValUtil.ucharpop(buf)
+                self.code.append(code)
+        elif self.format == 1:
+            self.nRanges, buf = ValUtil.ucharpop(buf)
+            self.Range1 = []
+            for i in range(self.nRanges):
+                ran1 = CffEncodingsRange1(buf)
+                self.Range1.append(ran1)
+                buf = ran1.buf
         else:
-            return "unknown"
+            #raise MyError("not supported format: {0}".format(self.format))
+            self.nSups = self.format
+            self.Supplement = []
+            for i in range(self.nSups):
+                sup = CffEncodingsSupplement(buf)
+                self.Supplement.append(sup)
+                buf = sup.buf
+
+        return buf
+
+    def show(self):
+        print("  [Encodings]")
+        if self.format == 0:
+            print("    format  = %d" % (self.format))
+            print("    nCodes  = %d" % (self.nCodes))
+            print("    code    = {0}".format(self.code))
+        elif self.format == 1:
+            print("    format  = %d" % (self.format))
+            print("    nRanges = %d" % (self.nRanges))
+            print("    Range1  = {0}".format([(r.first, r.nLeft) for r in self.Range1]))
+        else:
+            print("    nSups      = %d" % (self.nSups))
+            print("    Supplement = {0}".format([(s.code, s.glyph) for s in self.Supplement]))
+
+class CffEncodingsRange1(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.first, buf = ValUtil.ucharpop(buf)
+        self.nLeft, buf = ValUtil.ucharpop(buf)
+        return buf
+
+class CffEncodingsSupplement(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.code, buf  = ValUtil.ucharpop(buf)
+        self.glyph, buf = ValUtil.ushortpop(buf)
+        return buf
+
+class CffCharsets(object):
+    def __init__(self, buf, nGlyphs):
+        self.nGlyphs = nGlyphs
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.format, buf = ValUtil.ucharpop(buf)
+        if self.format == 0:
+            self.glyph = []
+            for i in range(self.nGlyphs):
+                g, buf = ValUtil.ushortpop(buf)
+                self.glyph.append(g)
+        elif self.format == 1:
+            self.Range1 = []
+            for i in range(self.nGlyphs):
+                ran1 = CffCharsetsRange1(buf)
+                self.Range1.append(ran1)
+                buf = ran1.buf
+        elif self.format == 2:
+            self.Range2 = []
+            for i in range(self.nGlyphs):
+                ran2 = CffCharsetsRange2(buf)
+                self.Range2.append(ran2)
+                buf = ran2.buf
+        else:
+            raise
+
+        return buf
+
+    def show(self):
+        print("  [Charsets]")
+        if self.format == 0:
+            print("    format  = %d" % (self.format))
+            print("    glyph    = {0}".format(self.glyph))
+        elif self.format == 1:
+            print("    format  = %d" % (self.format))
+            print("    Range1  = {0}".format([(r.first, r.nLeft) for r in self.Range1]))
+        elif self.format == 2:
+            print("    format  = %d" % (self.format))
+            print("    Range2  = {0}".format([(r.first, r.nLeft) for r in self.Range2]))
+        else:
+            raise
+
+class CffCharsetsRange1(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.first, buf = ValUtil.ushortpop(buf)
+        self.nLeft, buf = ValUtil.ucharpop(buf)
+        return buf
+
+class CffCharsetsRange2(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.first, buf = ValUtil.ushortpop(buf)
+        self.nLeft, buf = ValUtil.ushortpop(buf)
+        return buf
 
 # CFF
 ##################################################
