@@ -189,6 +189,10 @@ class CFFData(object):
     def OffSize(buf):
         return ValUtil.ucharpop(buf)
 
+# 5176.CFF.pdf  Appendix A Standard Strings
+class SID(object):
+    nStdStrings = 391
+
 ## utility of LongDateTime
 class LongDateTime(object):
     @staticmethod
@@ -433,9 +437,9 @@ class CffTable(Table):
         buf = self.nameIndex.buf
         self.topDictIndex     = TopDictIndex(buf)
         buf = self.topDictIndex.buf
-        self.stringIndex      = CffIndexData(buf, "String")
+        self.stringIndex      = CffINDEXData(buf, "String")
         buf = self.stringIndex.buf
-        self.globalSubrIndex  = CffIndexData(buf, "Global Subr")
+        self.globalSubrIndex  = CffINDEXData(buf, "Global Subr")
         self.encodings        = None
         self.charsets         = None
         self.FDSelect         = None
@@ -444,7 +448,7 @@ class CffTable(Table):
         print("[Table(%s)]" % (self.tag))
         self.header.show()
         self.nameIndex.show()
-        self.topDictIndex.show()
+        self.topDictIndex.show(self.stringIndex)
         self.stringIndex.show()
         self.globalSubrIndex.show()
 
@@ -560,7 +564,7 @@ class CffDictData(object):
 
 
 # 5176.CFF.pdf  5 INDEX Data (p.12)
-class CffIndexData(object):
+class CffINDEXData(object):
     def __init__(self, buf, name):
         self.name  = name
         self.count = 0
@@ -583,13 +587,13 @@ class CffIndexData(object):
         return buf
 
     def show(self):
-        print("  [CffIndexData(%s)]" % (self.name))
+        print("  [CffINDEXData(%s)]" % (self.name))
         print("    count   = %d" % (self.count))
         if self.count != 0:
             print("    offSize = %d" % (self.offSize))
             print("    offset  = {0}".format(", ".join([str(val) for val in self.offset])))
 
-class NameIndex(CffIndexData):
+class NameIndex(CffINDEXData):
     def __init__(self, buf):
         super(NameIndex, self).__init__(buf, "Name")
 
@@ -602,7 +606,7 @@ class NameIndex(CffIndexData):
         if self.count != 0:
             print("    data    = {0}".format(", ".join(self.data)))
 
-class TopDictIndex(CffIndexData):
+class TopDictIndex(CffINDEXData):
     def __init__(self, buf):
         self.cffDict = []
         super(TopDictIndex, self).__init__(buf, "Top DICT")
@@ -612,14 +616,25 @@ class TopDictIndex(CffIndexData):
         self.cffDict = [CffDictData(data) for data in self.data]
         return buf
 
-    def show(self):
+    def show(self, stringIndex = None):
         super(TopDictIndex, self).show()
 
         if self.count != 0:
             for cffDict in self.cffDict:
                 print("    -----")
                 for k,v in cffDict.items():
-                    print("    {0} = {1}".format(TopDictOp.to_s(k), v))
+                    if stringIndex is None:
+                        print("    {0} = {1}".format(TopDictOp.to_s(k), v))
+                    else:
+                        if k == TopDictOp.version or k == TopDictOp.Notice or k == TopDictOp.Copyright \
+                           or k == TopDictOp.FullName or k == TopDictOp.FamilyName or k == TopDictOp.Weight \
+                           or k == TopDictOp.PostScript or k == TopDictOp.BaseFontName or k == TopDictOp.FontName:
+                            print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(k), v, stringIndex.data[v[0] - SID.nStdStrings]))
+                        elif k == TopDictOp.ROS:
+                            print("    {0} = {1} << {2}-{3}-{4} >>".format(TopDictOp.to_s(k), v,
+                                stringIndex.data[v[0] - SID.nStdStrings], stringIndex.data[v[1] - SID.nStdStrings], v[2]))
+                        else:
+                            print("    {0} = {1}".format(TopDictOp.to_s(k), v))
 
 class TopDictOp(object):
     version            = 0
