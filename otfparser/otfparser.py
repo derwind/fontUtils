@@ -2021,18 +2021,19 @@ class CffCharsets(object):
         self.format, buf = ValUtil.ucharpop(buf)
         if self.format == 0:
             self.glyph = []
-            for i in range(self.nGlyphs):
+            # the. notdef glyph name is omitted.
+            for i in range(self.nGlyphs-1):
                 g, buf = ValUtil.ushortpop(buf)
                 self.glyph.append(g)
         elif self.format == 1:
             self.Range1 = []
-            for i in range(self.nGlyphs):
+            for i in range(self.nGlyphs-1):
                 ran1 = CffCharsetsRange1(buf)
                 self.Range1.append(ran1)
                 buf = ran1.buf
         elif self.format == 2:
             self.Range2 = []
-            for i in range(self.nGlyphs):
+            for i in range(self.nGlyphs-1):
                 ran2 = CffCharsetsRange2(buf)
                 self.Range2.append(ran2)
                 buf = ran2.buf
