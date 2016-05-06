@@ -1696,7 +1696,6 @@ class LangTagRecord(object):
 ## http://www.microsoft.com/typography/otspec/cff.htm
 ## http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5176.CFF.pdf
 ## http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5177.Type2.pdf
-## OOps...
 class CffTable(Table):
     def __init__(self, buf, tag):
         super(CffTable, self).__init__(buf, tag)
@@ -1725,7 +1724,8 @@ class CffTable(Table):
         self.charStringsIndex = None
         if TopDictOp.CharStrings in cffDict:
             offset = cffDict[TopDictOp.CharStrings][0]
-            self.charStringsIndex = CffINDEXData(self.buf_head[offset:], "CharStrings")
+            charstringType = cffDict[TopDictOp.CharstringType][0]
+            self.charStringsIndex = CharStringsIndex(self.buf_head[offset:], charstringType)
         self.charsets         = None
         if TopDictOp.charset in cffDict:
             offset = cffDict[TopDictOp.charset][0]
@@ -1771,8 +1771,8 @@ class CffHeader(object):
 # [------------------- value -----------------------][-------- key ---------]
 # [operand(s); variable-size; integer or real values][operator; 1- or 2-byte]
 class CffDictData(object):
-    def __init__(self, buf):
-        self._dict = {}
+    def __init__(self, buf, defaultDict = {}):
+        self._dict = defaultDict
         self.buf  = self.parse(buf)
 
     # like a dict
@@ -1855,25 +1855,7 @@ class CffDictData(object):
                 if end:
                     return float(s), buf
         else: # integer
-            if 32 <= b0 <= 246:
-                return b0-139, buf
-            else:
-                b1, buf   = ValUtil.ucharpop(buf)
-                if 247 <= b0 <= 250:
-                    return  (b0-247)*256+b1+108, buf
-                elif 251 <= b0 <= 254:
-                    return -(b0-251)*256-b1-108, buf
-                else:
-                    b2, buf   = ValUtil.ucharpop(buf)
-                    if b0 == 28:
-                        return b1<<8|b2, buf
-                    elif b0 == 29:
-                        b3, buf   = ValUtil.ucharpop(buf)
-                        b4, buf   = ValUtil.ucharpop(buf)
-                        return b1<<24|b2<<16|b3<<8|b4, buf
-                    else:
-                        raise
-
+            return CffDecorder.decodeInteger(buf, b0)
 
 # 5176.CFF.pdf  5 INDEX Data (p.12)
 class CffINDEXData(object):
@@ -1925,7 +1907,7 @@ class TopDictIndex(CffINDEXData):
 
     def parse(self, buf):
         buf = super(TopDictIndex, self).parse(buf)
-        self.cffDict = [CffDictData(data) for data in self.data]
+        self.cffDict = [CffDictData(data, TopDictIndex.gen_defaultDict()) for data in self.data]
         return buf
 
     def show(self, stringIndex = None):
@@ -1949,6 +1931,22 @@ class TopDictIndex(CffINDEXData):
                             print("    {0} = {1} << {2}-{3}-{4} >>".format(TopDictOp.to_s(k), v, s0, s1, v[2]))
                         else:
                             print("    {0} = {1}".format(TopDictOp.to_s(k), v))
+
+    @staticmethod
+    def gen_defaultDict():
+        return {
+            TopDictOp.isFixedPitch:       [0],
+            TopDictOp.ItalicAngle:        [0],
+            TopDictOp.UnderlinePosition:  [-100],
+            TopDictOp.UnderlineThickness: [50],
+            TopDictOp.PaintType:          [0],
+            TopDictOp.CharstringType:     [2],
+            TopDictOp.FontMatrix:         [0.001, 0, 0, 0001, 0, 0],
+            TopDictOp.FontBBox:           [0, 0, 0, 0],
+            TopDictOp.StrokeWidth:        [0],
+            TopDictOp.charset:            [0],
+            TopDictOp.Encoding:           [0]
+        }
 
 class CffEncodings(object):
     def __init__(self, buf):
@@ -2012,6 +2010,42 @@ class CffEncodingsSupplement(object):
         self.glyph, buf = ValUtil.ushortpop(buf)
         return buf
 
+# 5176.CFF.pdf  14 CharStrings INDEX (p.23)
+class CharStringsIndex(CffINDEXData):
+    def __init__(self, buf, charstringType):
+        self.charstringType = charstringType
+        if self.charstringType != 2:
+            raise MyError("currently not support CharstringType which is not 2")
+        super(CharStringsIndex, self).__init__(buf, "CharStrings")
+
+    def parse(self, buf):
+        buf = super(CharStringsIndex, self).parse(buf)
+        self.glyphs = [ Type2Charstring(d) for d in self.data ]
+        return buf
+
+    def show(self, stringIndex = None):
+        super(CharStringsIndex, self).show()
+
+        for g in self.glyphs:
+            print("    -----")
+            g.show()
+
+# 5177.Type2.pdf  3.1 Type 2 Charstring Organization (p.10)
+class Type2Charstring(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    # w? {hs* vs* cm* hm* mt subpath}? {mt subpath}* endchar
+    def parse(self, buf):
+        remainings = len(buf)
+        while remainings > 0:
+            b, buf = ValUtil.ucharpop(buf)
+            remainings -= 1
+
+    def show(self):
+        pass
+
+# 5176.CFF.pdf  13 Charsets (p.21)
 class CffCharsets(object):
     def __init__(self, buf, nGlyphs):
         self.nGlyphs = nGlyphs
@@ -2073,6 +2107,30 @@ class CffCharsetsRange2(object):
         self.first, buf = ValUtil.ushortpop(buf)
         self.nLeft, buf = ValUtil.ushortpop(buf)
         return buf
+
+class CffDecorder(object):
+    @staticmethod
+    def decodeInteger(buf, b0 = None):
+        if b0 is None:
+            b0, buf = ValUtil.ucharpop(buf)
+        if 32 <= b0 <= 246:
+            return b0-139, buf
+        else:
+            b1, buf   = ValUtil.ucharpop(buf)
+            if 247 <= b0 <= 250:
+                return  (b0-247)*256+b1+108, buf
+            elif 251 <= b0 <= 254:
+                return -(b0-251)*256-b1-108, buf
+            else:
+                b2, buf   = ValUtil.ucharpop(buf)
+                if b0 == 28:
+                    return b1<<8|b2, buf
+                elif b0 == 29:
+                    b3, buf   = ValUtil.ucharpop(buf)
+                    b4, buf   = ValUtil.ucharpop(buf)
+                    return b1<<24|b2<<16|b3<<8|b4, buf
+                else:
+                    raise
 
 # CFF
 ##################################################
