@@ -428,10 +428,14 @@ class CffTable(Table):
         # 5176.CFF.pdf  Table 1 CFF Data Layout (p.8)
         self.buf_head        = buf
         self.header           = CffHeader(buf)
-        self.nameIndex        = NameIndex(self.header.buf)
-        self.topDictIndex     = TopDictIndex(self.nameIndex.buf)
-        self.stringIndex      = CffIndexData(self.topDictIndex.buf, "String")
-        self.globalSubrIndex  = CffIndexData(self.stringIndex.buf, "Global Subr")
+        buf = self.header.buf
+        self.nameIndex        = NameIndex(buf)
+        buf = self.nameIndex.buf
+        self.topDictIndex     = TopDictIndex(buf)
+        buf = self.topDictIndex.buf
+        self.stringIndex      = CffIndexData(buf, "String")
+        buf = self.stringIndex.buf
+        self.globalSubrIndex  = CffIndexData(buf, "Global Subr")
         self.encodings        = None
         self.charsets         = None
         self.FDSelect         = None
@@ -469,13 +473,99 @@ class CffHeader(object):
 # [------------------- value -----------------------][-------- key ---------]
 # [operand(s); variable-size; integer or real values][operator; 1- or 2-byte]
 class CffDictData(object):
-    pass
+    def __init__(self, buf):
+        self.dict = []
+        self.buf  = self.parse(buf)
+
+    def items(self):
+        return self.dict
+
+    def parse(self, buf):
+        operands = []
+        while len(buf) > 0:
+            b = ValUtil.uchar(buf)
+            if CffDictData._is_operator(b):
+                operator, buf = CffDictData._operator(buf)
+                self.dict.append( (operator, operands) )
+                operands = []
+            else:
+                operand, buf = CffDictData._operand(buf)
+                operands.append(operand)
+
+    @staticmethod
+    def _is_operator(b):
+        if 0 <= b <= 21:
+            return True
+        elif 28 <= b <= 30 or 32 <= b <= 254:
+            return False
+        else:
+            raise
+
+    @staticmethod
+    def _operator(buf):
+        b0, buf = ValUtil.ucharpop(buf)
+        if b0 != 12:
+            return b0, buf
+        else:
+            b1, buf = ValUtil.ucharpop(buf)
+            return b0<<8|b1, buf
+
+    @staticmethod
+    def _operand(buf):
+        b0, buf = ValUtil.ucharpop(buf)
+        if b0 == 30: # real number
+            s = ""
+            def nibble_proc(s, nibble):
+                if 0 <= nibble <= 9:
+                    return s + str(nibble), 0
+                elif nibble == 0xa:
+                    return s + ".", 0
+                elif nibble == 0xb:
+                    return s + "E", 0
+                elif nibble == 0xc:
+                    return s + "E-", 0
+                elif nibble == 0xe:
+                    return "-" + s, 0
+                elif nibble2 == 0xf:
+                    return s, 1
+                else:
+                    raise
+
+            while True:
+                b, buf = ValUtil.ucharpop(buf)
+                nibble1, nibble2 = b>>4, b&0xf
+                s, end = nibble_proc(s, nibble1)
+                s, end = nibble_proc(s, nibble2)
+                if end:
+                    return float(s), buf
+        else: # integer
+            if 32 <= b0 <= 246:
+                return b0-139, buf
+            else:
+                b1, buf   = ValUtil.ucharpop(buf)
+                if 247 <= b0 <= 250:
+                    return  (b0-247)*256+b1+108, buf
+                elif 251 <= b0 <= 254:
+                    return -(b0-251)*256-b1-108, buf
+                else:
+                    b2, buf   = ValUtil.ucharpop(buf)
+                    if b0 == 28:
+                        return b1<<8|b2, buf
+                    elif b0 == 29:
+                        b3, buf   = ValUtil.ucharpop(buf)
+                        b4, buf   = ValUtil.ucharpop(buf)
+                        return b1<<24|b2<<16|b3<<8|b4, buf
+                    else:
+                        raise
+
 
 # 5176.CFF.pdf  5 INDEX Data (p.12)
 class CffIndexData(object):
     def __init__(self, buf, name):
-        self.name = name
-        self.buf = self.parse(buf)
+        self.name  = name
+        self.count = 0
+        self.data  = None
+        self.buf   = self.parse(buf)
 
     def parse(self, buf):
         self.count, buf   = ValUtil.ushortpop(buf)
@@ -514,17 +604,131 @@ class NameIndex(CffIndexData):
 
 class TopDictIndex(CffIndexData):
     def __init__(self, buf):
+        self.cffDict = []
         super(TopDictIndex, self).__init__(buf, "Top DICT")
 
     def parse(self, buf):
         buf = super(TopDictIndex, self).parse(buf)
+        self.cffDict = [CffDictData(data) for data in self.data]
         return buf
 
     def show(self):
         super(TopDictIndex, self).show()
 
         if self.count != 0:
-            print("    data    = {0}".format(", ".join(self.data)))
+            for cffDict in self.cffDict:
+                print("    -----")
+                for k,v in cffDict.items():
+                    print("    {0} = {1}".format(TopDictOp.to_s(k), v))
+
+class TopDictOp(object):
+    version            = 0
+    Notice             = 1
+    Copyright          = 12<<8|0
+    FullName           = 2
+    FamilyName         = 3
+    Weight             = 4
+    isFixedPitch       = 12<<8|1
+    ItalicAngle        = 12<<8|2
+    UnderlinePosition  = 12<<8|3
+    UnderlineThickness = 12<<8|4
+    PaintType          = 12<<8|5
+    CharstringType     = 12<<8|6
+    FontMatrix         = 12<<8|7
+    UniqueID           = 13
+    FontBBox           = 5
+    StrokeWidth        = 12<<8|8
+    XUID               = 14
+    charset            = 15
+    Encoding           = 16
+    CharStrings        = 17
+    Private            = 18
+    SyntheticBase      = 12<<8|20
+    PostScript         = 12<<8|21
+    BaseFontName       = 12<<8|22
+    BaseFontBlend      = 12<<8|23
+    ROS                = 12<<8|30
+    CIDFontVersion     = 12<<8|31
+    CIDFontRevision    = 12<<8|32
+    CIDFontType        = 12<<8|33
+    CIDCount           = 12<<8|34
+    UIDBase            = 12<<8|35
+    FDArray            = 12<<8|36
+    FDSelect           = 12<<8|37
+    FontName           = 12<<8|38
+
+    @classmethod
+    def to_s(cls, op):
+        if op == cls.version:
+            return "version"
+        elif op == cls.Notice:
+            return "Notice"
+        elif op == cls.Copyright:
+            return "Copyright"
+        elif op == cls.FullName:
+            return "FullName"
+        elif op == cls.FamilyName:
+            return "FamilyName"
+        elif op == cls.Weight:
+            return "Weight"
+        elif op == cls.isFixedPitch:
+            return "isFixedPitch"
+        elif op == cls.ItalicAngle:
+            return "ItalicAngle"
+        elif op == cls.UnderlinePosition:
+            return "UnderlinePosition"
+        elif op == cls.UnderlineThickness:
+            return "UnderlineThickness"
+        elif op == cls.PaintType:
+            return "PaintType"
+        elif op == cls.CharstringType:
+            return "CharstringType"
+        elif op == cls.FontMatrix:
+            return "FontMatrix"
+        elif op == cls.UniqueID:
+            return "UniqueID"
+        elif op == cls.FontBBox:
+            return "FontBBox"
+        elif op == cls.StrokeWidth:
+            return "StrokeWidth"
+        elif op == cls.XUID:
+            return "XUID"
+        elif op == cls.charset:
+            return "charset"
+        elif op == cls.Encoding:
+            return "Encoding"
+        elif op == cls.CharStrings:
+            return "CharStrings"
+        elif op == cls.Private:
+            return "Private"
+        elif op == cls.SyntheticBase:
+            return "SyntheticBase"
+        elif op == cls.PostScript:
+            return "PostScript"
+        elif op == cls.BaseFontName:
+            return "BaseFontName"
+        elif op == cls.BaseFontBlend:
+            return "BaseFontBlend"
+        elif op == cls.ROS:
+            return "ROS"
+        elif op == cls.CIDFontVersion:
+            return "CIDFontVersion"
+        elif op == cls.CIDFontRevision:
+            return "CIDFontRevision"
+        elif op == cls.CIDFontType:
+            return "CIDFontType"
+        elif op == cls.CIDCount:
+            return "CIDCount"
+        elif op == cls.UIDBase:
+            return "UIDBase"
+        elif op == cls.FDArray:
+            return "FDArray"
+        elif op == cls.FDSelect:
+            return "FDSelect"
+        elif op == cls.FontName:
+            return "FontName"
+        else:
+            return "unknown"
 
 # CFF
 ##################################################
