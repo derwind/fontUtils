@@ -1476,6 +1476,158 @@ class StdStr(object):
         else:
             return "unknown"
 
+# 5177.Type2.pdf  Appendix A Type 2 Charstring Command Codes (p.31)
+class Type2Op(object):
+    hstem      = 1
+    vstem      = 3
+    vmoveto    = 4
+    rlineto    = 5
+    hlineto    = 6
+    vlineto    = 7
+    rrcurveto  = 8
+    callsubr   = 10
+    _return    = 11
+    escape     = 12
+    endchar    = 14
+    hstemhm    = 18
+    hintmask   = 19
+    cntrmask   = 20
+    rmoveto    = 21
+    hmoveto    = 22
+    vstemhm    = 23
+    rcurveline = 24
+    rlinecurve = 25
+    vvcurveto  = 26
+    hhcurveto  = 27
+    shortint   = 28
+    callgsubr  = 29
+    vhcurveto  = 30
+    hvcurveto  = 31
+    _and       = 12<<8|3
+    _or        = 12<<8|4
+    _not       = 12<<8|5
+    abs        = 12<<8|9
+    add        = 12<<8|10
+    sub        = 12<<8|11
+    div        = 12<<8|12
+    neg        = 12<<8|14
+    eq         = 12<<8|15
+    put        = 12<<8|20
+    get        = 12<<8|21
+    ifelse     = 12<<8|22
+    random     = 12<<8|23
+    mul        = 12<<8|24
+    sqrt       = 12<<8|26
+    dup        = 12<<8|27
+    exch       = 12<<8|28
+    index      = 12<<8|29
+    roll       = 12<<8|30
+    hflex      = 12<<8|34
+    flex       = 12<<8|35
+    hflex1     = 12<<8|36
+    flex1      = 12<<8|37
+
+    @classmethod
+    def to_s(cls, op):
+        if op == cls.hstem:
+            return "hstem"
+        elif op == cls.vstem:
+            return "vstem"
+        elif op == cls.vmoveto:
+            return "vmoveto"
+        elif op == cls.rlineto:
+            return "rlineto"
+        elif op == cls.hlineto:
+            return "hlineto"
+        elif op == cls.vlineto:
+            return "vlineto"
+        elif op == cls.rrcurveto:
+            return "rrcurveto"
+        elif op == cls.callsubr:
+            return "callsubr"
+        elif op == cls._return:
+            return "return"
+        elif op == cls.escape:
+            return "escape"
+        elif op == cls.endchar:
+            return "endchar"
+        elif op == cls.hstemhm:
+            return "hstemhm"
+        elif op == cls.hintmask:
+            return "hintmask"
+        elif op == cls.cntrmask:
+            return "cntrmask"
+        elif op == cls.rmoveto:
+            return "rmoveto"
+        elif op == cls.hmoveto:
+            return "hmoveto"
+        elif op == cls.vstemhm:
+            return "vstemhm"
+        elif op == cls.rcurveline:
+            return "rcurveline"
+        elif op == cls.rlinecurve:
+            return "rlinecurve"
+        elif op == cls.vvcurveto:
+            return "vvcurveto"
+        elif op == cls.hhcurveto:
+            return "hhcurveto"
+        elif op == cls.shortint:
+            return "shortint"
+        elif op == cls.callgsubr:
+            return "callgsubr"
+        elif op == cls.vhcurveto:
+            return "vhcurveto"
+        elif op == cls.hvcurveto:
+            return "hvcurveto"
+        elif op == cls._and:
+            return "and"
+        elif op == cls._or:
+            return "or"
+        elif op == cls._not:
+            return "not"
+        elif op == cls.abs:
+            return "abs"
+        elif op == cls.add:
+            return "add"
+        elif op == cls.sub:
+            return "sub"
+        elif op == cls.div:
+            return "div"
+        elif op == cls.neg:
+            return "neg"
+        elif op == cls.eq:
+            return "eq"
+        elif op == cls.put:
+            return "put"
+        elif op == cls.get:
+            return "get"
+        elif op == cls.ifelse:
+            return "ifelse"
+        elif op == cls.random:
+            return "random"
+        elif op == cls.mul:
+            return "mul"
+        elif op == cls.sqrt:
+            return "sqrt"
+        elif op == cls.dup:
+            return "dup"
+        elif op == cls.exch:
+            return "exch"
+        elif op == cls.index:
+            return "index"
+        elif op == cls.roll:
+            return "roll"
+        elif op == cls.hflex:
+            return "hflex"
+        elif op == cls.flex:
+            return "flex"
+        elif op == cls.hflex1:
+            return "hflex1"
+        elif op == cls.flex1:
+            return "flex1"
+        else:
+            return "unknown"
+
 ##################################################
 
 ## Header for OTF file
@@ -2033,17 +2185,50 @@ class CharStringsIndex(CffINDEXData):
 # 5177.Type2.pdf  3.1 Type 2 Charstring Organization (p.10)
 class Type2Charstring(object):
     def __init__(self, buf):
-        self.buf = self.parse(buf)
+        self.cmds = []
+        self.buf  = self.parse(buf)
 
     # w? {hs* vs* cm* hm* mt subpath}? {mt subpath}* endchar
     def parse(self, buf):
-        remainings = len(buf)
-        while remainings > 0:
+        args = []
+        while len(buf) > 0:
             b, buf = ValUtil.ucharpop(buf)
-            remainings -= 1
+            # Table 1 Type 2 Charstring Encoding Values (p.13)
+            if 0<= b <= 11: # operators
+                self.cmds.append( (b, args) )
+                args = []
+            elif b == 12: # escape: next byte interpreted as additional operators
+                additional, buf = ValUtil.ucharpop(buf)
+                op = 12<<8|additional
+                self.cmds.append( (op, args) )
+                args = []
+            elif 13 <= b <= 18: # operators
+                self.cmds.append( (b, args) )
+                args = []
+            elif 19 <= b <= 20: # operators (hintmask and cntrmask)
+                # XXX: uhh...
+                raise
+            elif 21 <= b <= 27: # operators
+                self.cmds.append( (b, args) )
+                args = []
+            elif b == 28: # following 2 bytes interpreted as a 16-bit two’s complement number
+                v, buf = ValUtil.sshortpop(buf)
+                args.append(v)
+            elif 29 <= b <= 31: # operators
+                self.cmds.append( (b, args) )
+                args = []
+            elif 32 <= b <= 254: # integers
+                v, buf = CffDecorder.decodeInteger(buf, b)
+                args.append(v)
+            elif b == 255: # next 4 bytes interpreted as a 32-bit two’s-complement number
+                v, buf = ValUtil.slongpop(buf)
+                args.append(v)
+            else:
+                raise
 
     def show(self):
-        pass
+        for op, args in self.cmds:
+            print "    ", args, "<< {0} >>".format(Type2Op.to_s(op))
 
 # 5176.CFF.pdf  13 Charsets (p.21)
 class CffCharsets(object):
