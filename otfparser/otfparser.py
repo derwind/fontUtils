@@ -2596,6 +2596,32 @@ class BaseTable(Table):
 
 # BASE table
 ##################################################
+# FFTM table  the FontForge time stamp table
+
+# https://fontforge.github.io/non-standard.html#FFTM
+class FftmTable(Table):
+    def __init__(self, buf, tag):
+        super(FftmTable, self).__init__(buf, tag)
+
+    def parse(self, buf):
+        super(FftmTable, self).parse(buf)
+
+        self.version, buf   = ValUtil.ulongpop(buf)
+        self.timestamp, buf = OTData.LONGDATETIME(buf)
+        self.created, buf   = OTData.LONGDATETIME(buf)
+        self.modified, buf  = OTData.LONGDATETIME(buf)
+
+        return buf
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        print("  version   = 0x%08x" % (self.version))
+        print("  timestamp = %s" % (LongDateTime.to_date_str(self.timestamp)))
+        print("  created   = %s" % (LongDateTime.to_date_str(self.created)))
+        print("  modified  = %s" % (LongDateTime.to_date_str(self.modified)))
+
+# FFTM table
+##################################################
 # CFF
 
 ## http://www.microsoft.com/typography/otspec/cff.htm
@@ -3412,6 +3438,8 @@ class OtfParser(object):
             self.__table.append( PostTable(buf, tag) )
         elif tag.lower() == "vorg":
             self.__table.append( VorgTable(buf, tag) )
+        elif tag.lower() == "fftm":
+            self.__table.append( FftmTable(buf, tag) )
         else:
             self.__table.append( Table(buf, tag) )
 
