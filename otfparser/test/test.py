@@ -24,5 +24,15 @@ for gname in topDict.getGlyphOrder():
     g = gs[gname]
 
 # replace CFF of cid00843 with that of cid00845
-# gs["cid00843"]._glyph.setBytecode( gs["cid00845"]._glyph.bytecode )
-# font.save("out.otf")
+"""
+g1 = gs["cid00843"]
+g2 = gs["cid00845"]
+g1._glyph.setBytecode( g2._glyph.bytecode )
+
+hmtx = font["hmtx"]
+vmtx = font["vmtx"]
+hmtx.metrics["cid00843"] = hmtx.metrics["cid00845"]
+vmtx.metrics["cid00843"] = vmtx.metrics["cid00845"]
+
+font.save("out.otf")
+"""
