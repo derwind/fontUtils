@@ -27,16 +27,52 @@ class ValUtil(object):
     def schar(buf):
         global py_ver
         n = ValUtil.uchar(buf)
-
-        sign = (n >> 7) & 0x1
-        if sign == 0:
-            return n
-        else:
-            return -((~n & 0x7f) + 1)
+        return ValUtil.signed(n)
 
     @staticmethod
     def scharpop(buf):
         return ValUtil.schar(buf), buf[1:]
+
+    @staticmethod
+    def signed(n, bit = 8):
+        if 7 <= bit <= 8:
+            sign = (n >> 7) & 0x1
+            if sign == 0:
+                return n
+            else:
+                return -((~n & 0x7f) + 1)
+        elif 15 <= bit <= 16:
+            sign = (n >> 15) & 0x1
+            if sign == 0:
+                return n
+            else:
+                return -((~n & 0x7fff) + 1)
+        elif 23 <= bit <= 24:
+            sign = (n >> 23) & 0x1
+            if sign == 0:
+                return n
+            else:
+                return -((~n & 0x7fffff) + 1)
+        elif 31 <= bit <= 32:
+            sign = (n >> 31) & 0x1
+            if sign == 0:
+                return n
+            else:
+                return -((~n & 0x7fffffff) + 1)
+        else:
+            raise
+
+    @staticmethod
+    def chars(buf, n):
+        global py_ver
+        if py_ver == 2:
+            return [ ValUtil.signed(ord(buf[i])) for i in range(n) ]
+        else:
+            return [ ValUtil.signed(buf[i]) for i in range(n) ]
+
+    @staticmethod
+    def charspop(buf, n):
+        return ValUtil.chars(buf, n), buf[n:]
 
     @staticmethod
     def uchar(buf):
@@ -51,15 +87,22 @@ class ValUtil(object):
         return ValUtil.uchar(buf), buf[1:]
 
     @staticmethod
+    def bytes(buf, n):
+        global py_ver
+        if py_ver == 2:
+            return [ ord(buf[i]) for i in range(n) ]
+        else:
+            return [ buf[i] for i in range(n) ]
+
+    @staticmethod
+    def bytespop(buf, n):
+        return ValUtil.bytes(buf, n), buf[n:]
+
+    @staticmethod
     def sshort(buf):
         global py_ver
         n = ValUtil.ushort(buf)
-
-        sign = (n >> 15) & 0x1
-        if sign == 0:
-            return n
-        else:
-            return -((~n & 0x7fff) + 1)
+        return ValUtil.signed(n, 16)
 
     @staticmethod
     def sshortpop(buf):
@@ -80,12 +123,7 @@ class ValUtil(object):
     def sint24(buf):
         global py_ver
         n = ValUtil.uint24(buf)
-
-        sign = (n >> 23) & 0x1
-        if sign == 0:
-            return n
-        else:
-            return -((~n & 0x7fffff) + 1)
+        return ValUtil.signed(n, 24)
 
     @staticmethod
     def sint24pop(buf):
@@ -106,12 +144,7 @@ class ValUtil(object):
     def slong(buf):
         global py_ver
         n = ValUtil.ulong(buf)
-
-        sign = (n >> 31) & 0x1
-        if sign == 0:
-            return n
-        else:
-            return -((~n & 0x7fffffff) + 1)
+        return ValUtil.signed(n, 32)
 
     @staticmethod
     def slongpop(buf):
@@ -1715,6 +1748,9 @@ class Table(object):
     def parse(self, buf):
         self.buf = buf
 
+##################################################
+# head table
+
 ## http://www.microsoft.com/typography/otspec/head.htm
 class HeadTable(Table):
     def __init__(self, buf, tag):
@@ -1738,7 +1774,7 @@ class HeadTable(Table):
         print("  lowest_rec_ppem      = %u" % (self.lowest_rec_ppem))
         print("  font_direction_hint  = %d" % (self.font_direction_hint))
         print("  index_to_loc_format  = %d" % (self.index_to_loc_format))
-        print("  glyph_buf_format    = %d" % (self.glyph_buf_format))
+        print("  glyph_buf_format     = %d" % (self.glyph_buf_format))
 
     def parse(self, buf):
         super(HeadTable, self).parse(buf)
@@ -1761,6 +1797,7 @@ class HeadTable(Table):
         self.index_to_loc_format, buf = ValUtil.sshortpop(buf)
         self.glyph_buf_format, buf = ValUtil.sshortpop(buf)
 
+# head table
 ##################################################
 # name table
 
@@ -1842,6 +1879,104 @@ class LangTagRecord(object):
             print("    Lang-tag = %s" % (s))
 
 # name table
+##################################################
+# OS/2 table
+
+# https://www.microsoft.com/typography/otspec/os2.htm
+class OS_2Table(Table):
+    def __init__(self, buf, tag):
+        super(OS_2Table, self).__init__(buf, tag)
+
+    def parse(self, buf):
+        super(OS_2Table, self).parse(buf)
+
+        self.version, buf              = ValUtil.ushortpop(buf)
+        self.xAvgCharWidth, buf        = ValUtil.sshortpop(buf)
+        self.usWeightClass, buf        = ValUtil.ushortpop(buf)
+        self.usWidthClass, buf         = ValUtil.ushortpop(buf)
+        self.fsType, buf               = ValUtil.ushortpop(buf)
+        self.ySubscriptXSize, buf      = ValUtil.sshortpop(buf)
+        self.ySubscriptYSize, buf      = ValUtil.sshortpop(buf)
+        self.ySubscriptXOffset, buf    = ValUtil.sshortpop(buf)
+        self.ySubscriptYOffset, buf    = ValUtil.sshortpop(buf)
+        self.ySuperscriptXSize, buf    = ValUtil.sshortpop(buf)
+        self.ySuperscriptYSize, buf    = ValUtil.sshortpop(buf)
+        self.ySuperscriptXOffset, buf  = ValUtil.sshortpop(buf)
+        self.ySuperscriptYOffset, buf  = ValUtil.sshortpop(buf)
+        self.yStrikeoutSize, buf       = ValUtil.sshortpop(buf)
+        self.yStrikeoutPosition, buf   = ValUtil.sshortpop(buf)
+        self.sFamilyClass, buf         = ValUtil.sshortpop(buf)
+        self.panose, buf               = ValUtil.bytespop(buf, 10)
+        self.ulUnicodeRange1, buf      = ValUtil.ulongpop(buf)
+        self.ulUnicodeRange2, buf      = ValUtil.ulongpop(buf)
+        self.ulUnicodeRange3, buf      = ValUtil.ulongpop(buf)
+        self.ulUnicodeRange4, buf      = ValUtil.ulongpop(buf)
+        self.achVendID, buf            = ValUtil.charspop(buf, 4)
+        self.fsSelection, buf          = ValUtil.ushortpop(buf)
+        self.usFirstCharIndex, buf     = ValUtil.ushortpop(buf)
+        self.usLastCharIndex, buf      = ValUtil.ushortpop(buf)
+        self.sTypoAscender, buf        = ValUtil.sshortpop(buf)
+        self.sTypoDescender, buf       = ValUtil.sshortpop(buf)
+        self.sTypoLineGap, buf         = ValUtil.sshortpop(buf)
+        self.usWinAscent, buf          = ValUtil.ushortpop(buf)
+        self.usWinDescent, buf         = ValUtil.ushortpop(buf)
+        self.ulCodePageRange1, buf     = ValUtil.ulongpop(buf)
+        self.ulCodePageRange2, buf     = ValUtil.ulongpop(buf)
+        self.sxHeight, buf             = ValUtil.sshortpop(buf)
+        self.sCapHeight, buf           = ValUtil.sshortpop(buf)
+        self.usDefaultChar, buf        = ValUtil.ushortpop(buf)
+        self.usBreakChar, buf          = ValUtil.ushortpop(buf)
+        self.usMaxContext, buf         = ValUtil.ushortpop(buf)
+        if self.version >= 5:
+            self.usLowerOpticalPointSize, buf  = ValUtil.ushortpop(buf)
+            self.usUpperOpticalPointSize, buf  = ValUtil.ushortpop(buf)
+
+        return buf
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        print("  version             = %d" % (self.version))
+        print("  xAvgCharWidth       = %d" % (self.xAvgCharWidth))
+        print("  usWeightClass       = %d" % (self.usWeightClass))
+
+        print("  usWidthClass        = %d" % (self.usWidthClass))
+        print("  fsType              = %d" % (self.fsType))
+        print("  ySubscriptXSize     = %d" % (self.ySubscriptXSize))
+        print("  ySubscriptYSize     = %d" % (self.ySubscriptYSize))
+        print("  ySubscriptXOffset   = %d" % (self.ySubscriptXOffset))
+        print("  ySubscriptYOffset   = %d" % (self.ySubscriptYOffset))
+        print("  ySuperscriptXSize   = %d" % (self.ySuperscriptXSize))
+        print("  ySuperscriptYSize   = %d" % (self.ySuperscriptYSize))
+        print("  ySuperscriptXOffset = %d" % (self.ySuperscriptXOffset))
+        print("  ySuperscriptYOffset = %d" % (self.ySuperscriptYOffset))
+        print("  yStrikeoutSize      = %d" % (self.yStrikeoutSize))
+        print("  yStrikeoutPosition  = %d" % (self.yStrikeoutPosition))
+        print("  panose              = {0}".format(self.panose))
+        print("  ulUnicodeRange1     = 0x%08x" % (self.ulUnicodeRange1))
+        print("  ulUnicodeRange2     = 0x%08x" % (self.ulUnicodeRange2))
+        print("  ulUnicodeRange3     = 0x%08x" % (self.ulUnicodeRange3))
+        print("  ulUnicodeRange4     = 0x%08x" % (self.ulUnicodeRange4))
+        print("  achVendID           = %c%c%c%c" % (self.achVendID[0], self.achVendID[1], self.achVendID[2], self.achVendID[3]))
+        print("  fsSelection         = %d" % (self.fsSelection))
+        print("  usFirstCharIndex    = %d" % (self.usFirstCharIndex))
+        print("  usLastCharIndex     = %d" % (self.usLastCharIndex))
+        print("  sTypoAscender       = %d" % (self.sTypoAscender))
+        print("  sTypoDescender      = %d" % (self.sTypoDescender))
+        print("  sTypoLineGap        = %d" % (self.sTypoLineGap))
+        print("  usWinAscent         = %d" % (self.usWinAscent))
+        print("  usWinDescent        = %d" % (self.usWinDescent))
+        print("  ulCodePageRange1    = 0x%08x" % (self.ulCodePageRange1))
+        print("  ulCodePageRange2    = 0x%08x" % (self.ulCodePageRange2))
+        print("  sxHeight            = %d" % (self.sxHeight))
+        print("  sCapHeight          = %d" % (self.sCapHeight))
+        print("  usDefaultChar       = %d" % (self.usDefaultChar))
+        print("  usBreakChar         = %d" % (self.usBreakChar))
+        print("  usMaxContext        = %d" % (self.usMaxContext))
+        if self.version >= 5:
+            print("  usLowerOpticalPointSize = %d" % (self.usLowerOpticalPointSize))
+            print("  usUpperOpticalPointSize = %d" % (self.usUpperOpticalPointSize))
+
+# OS/2 table
 ##################################################
 # CFF
 
@@ -2566,6 +2701,8 @@ class OtfParser(object):
             self.__table.append( HeadTable(buf, tag) )
         elif tag.lower() == "name":
             self.__table.append( NameTable(buf, tag) )
+        elif tag.lower() == "os/2":
+            self.__table.append( OS_2Table(buf, tag) )
         else:
             self.__table.append( Table(buf, tag) )
 
