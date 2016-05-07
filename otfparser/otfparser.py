@@ -2190,7 +2190,7 @@ class HmtxTable(Table):
             self.hMetrics.append(hMtx)
             buf = hMtx.buf
 
-        self.leftSideBearing, buf = ValUtil.sshortspop(buf, self.numGlyphs-1)
+        self.leftSideBearing, buf = ValUtil.sshortspop(buf, self.numGlyphs-self.numberOfHMetrics)
 
         return buf
 
@@ -2234,7 +2234,7 @@ class VmtxTable(Table):
             self.vMetrics.append(vMtx)
             buf = vMtx.buf
 
-        self.topSideBearing, buf = ValUtil.sshortspop(buf, self.numGlyphs-1)
+        self.topSideBearing, buf = ValUtil.sshortspop(buf, self.numGlyphs-self.numOfLongVerMetrics)
 
         return buf
 
