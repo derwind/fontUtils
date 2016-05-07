@@ -2572,6 +2572,30 @@ class vertOriginYMetrics(object):
 
 # VORG table
 ##################################################
+# BASE table
+
+# https://www.microsoft.com/typography/otspec/base.htm
+class BaseTable(Table):
+    def __init__(self, buf, tag):
+        super(BaseTable, self).__init__(buf, tag)
+
+    def parse(self, buf):
+        super(BaseTable, self).parse(buf)
+
+        self.Version, buf   = OTData.Fixed(buf)
+        self.HorizAxis, buf = OTData.Offset(buf)
+        self.VertAxis, buf  = OTData.Offset(buf)
+
+        return buf
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        print("  Version   = 0x%08x" % (self.Version))
+        print("  HorizAxis = %d" % (self.HorizAxis))
+        print("  VertAxis  = %d" % (self.VertAxis))
+
+# BASE table
+##################################################
 # CFF
 
 ## http://www.microsoft.com/typography/otspec/cff.htm
@@ -3365,6 +3389,8 @@ class OtfParser(object):
             self.__table.append( NameTable(buf, tag) )
         elif tag.lower() == "os/2":
             self.__table.append( OS_2Table(buf, tag) )
+        elif tag.lower() == "base":
+            self.__table.append( BaseTable(buf, tag) )
         elif tag.lower() == "post":
             self.__table.append( PostTable(buf, tag) )
         elif tag.lower() == "vorg":
