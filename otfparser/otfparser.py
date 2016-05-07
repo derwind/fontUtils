@@ -109,6 +109,18 @@ class ValUtil(object):
         return ValUtil.sshort(buf), buf[2:]
 
     @staticmethod
+    def sshorts(buf, n):
+        global py_ver
+        if py_ver == 2:
+            return [ ValUtil.signed(ord(buf[i*2]) << 8 | ord(buf[i*2+1]), 16) for i in range(n) ]
+        else:
+            return [ ValUtil.signed(buf[i*2] << 8 | buf[i*2+1], 16) for i in range(n) ]
+
+    @staticmethod
+    def sshortspop(buf, n):
+        return ValUtil.sshorts(buf, n), buf[2*n:]
+
+    @staticmethod
     def ushort(buf):
         global py_ver
         if py_ver == 2:
@@ -119,6 +131,18 @@ class ValUtil(object):
     @staticmethod
     def ushortpop(buf):
         return ValUtil.ushort(buf), buf[2:]
+
+    @staticmethod
+    def ushorts(buf, n):
+        global py_ver
+        if py_ver == 2:
+            return [ ord(buf[i*2]) << 8 | ord(buf[i*2+1]) for i in range(n) ]
+        else:
+            return [ buf[i*2] << 8 | buf[i*2+1] for i in range(n) ]
+
+    @staticmethod
+    def ushortspop(buf, n):
+        return ValUtil.ushorts(buf, n), buf[2*n:]
 
     def sint24(buf):
         global py_ver
@@ -1749,6 +1773,178 @@ class Table(object):
         self.buf = buf
 
 ##################################################
+# cmap table
+
+## https://www.microsoft.com/typography/otspec/cmap.htm
+class CmapTable(Table):
+    def __init__(self, buf, tag):
+        super(CmapTable, self).__init__(buf, tag)
+
+    def parse(self, buf, scriptListHead = None):
+        self.buf_head       = buf # the top of the cmap table buffer
+        self.version, buf   = ValUtil.ushortpop(buf)
+        self.numTables, buf = ValUtil.ushortpop(buf)
+        self.encodingTables = []
+        for i in range(self.numTables):
+            encodingTbl = CmapEncodingTable(buf)
+            self.encodingTables.append(encodingTbl)
+            buf = encodingTbl.buf
+        self.subTables = []
+        for i in range(self.numTables):
+            subTbl = CmapSubTable(self.buf_head[self.encodingTables[i].offset:])
+            self.subTables.append(subTbl)
+
+        return buf
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        print("  version       = %d" % (self.version))
+        print("  numTables     = %d" % (self.numTables))
+        for encodingTbl in self.encodingTables:
+            encodingTbl.show()
+        for subTbl in self.subTables:
+            subTbl.show()
+
+class CmapEncodingTable(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.platformID, buf = ValUtil.ushortpop(buf)
+        self.encodingID, buf = ValUtil.ushortpop(buf)
+        self.offset, buf     = ValUtil.ulongpop(buf)
+        return buf
+
+    def show(self):
+        print("  [EncodingTable]")
+        print("    platformID = %d" % (self.platformID))
+        print("    encodingID = %d" % (self.encodingID))
+        print("    offset     = %d" % (self.offset))
+
+class CmapSubTable(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        format = ValUtil.ushort(buf)
+        if format == 0:
+            self.subtable = CmapSubTable0(buf)
+        elif format == 2:
+            self.subtable = CmapSubTable2(buf)
+        elif format == 4:
+            self.subtable = CmapSubTable4(buf)
+        elif format == 14:
+            self.subtable = CmapSubTable14(buf)
+        else:
+            raise MyError("currently not support")
+
+        return self.subtable.buf
+
+    def show(self):
+        self.subtable.show()
+
+class CmapSubTable0(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.format, buf       = ValUtil.ushortpop(buf)
+        self.length, buf       = ValUtil.ushortpop(buf)
+        self.language, buf     = ValUtil.ushortpop(buf)
+        self.glyphIdArray, buf = ValUtil.bytespop(buf, 256)
+
+        return buf
+
+    def show(self):
+        print("  [CmapSubTable0]")
+        print("    format       = %d" % (self.format))
+        print("    length       = %d" % (self.length))
+        print("    language     = %d" % (self.language))
+        print("    glyphIdArray = %d" % (self.glyphIdArray))
+
+class CmapSubTable2(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.format, buf       = ValUtil.ushortpop(buf)
+        self.length, buf       = ValUtil.ushortpop(buf)
+        self.language, buf     = ValUtil.ushortpop(buf)
+
+        return buf
+
+    def show(self):
+        print("  [CmapSubTable2]")
+        print("    format       = %d" % (self.format))
+        print("    length       = %d" % (self.length))
+        print("    language     = %d" % (self.language))
+
+class CmapSubTable4(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.format, buf        = ValUtil.ushortpop(buf)
+        self.length, buf        = ValUtil.ushortpop(buf)
+        self.language, buf      = ValUtil.ushortpop(buf)
+        self.segCountX2, buf    = ValUtil.ushortpop(buf)
+        self.searchRange, buf   = ValUtil.ushortpop(buf)
+        self.entrySelector, buf = ValUtil.ushortpop(buf)
+        self.rangeShift, buf    = ValUtil.ushortpop(buf)
+
+        segCount = self.segCountX2 / 2
+
+        self.endCount, buf      = ValUtil.ushortspop(buf, segCount)
+        self.reservedPad, buf   = ValUtil.ushortpop(buf)
+        self.startCount, buf    = ValUtil.ushortspop(buf, segCount)
+        self.idDelta, buf       = ValUtil.sshortspop(buf, segCount)
+        self.idRangeOffset, buf = ValUtil.ushortspop(buf, segCount)
+
+        ramaining = self.length - 2*7 - self.segCountX2 - 2 - self.segCountX2*3
+
+        self.glyphIdArray = []
+        while ramaining > 0:
+            gid, buf = ValUtil.ushortpop(buf)
+            self.glyphIdArray.append(gid)
+            ramaining -= 2
+
+        return buf
+
+    def show(self):
+        print("  [CmapSubTable4]")
+        print("    format        = %d" % (self.format))
+        print("    length        = %d" % (self.length))
+        print("    language      = %d" % (self.language))
+        print("    segCountX2    = %d" % (self.segCountX2))
+        print("    searchRange   = %d" % (self.searchRange))
+        print("    entrySelector = %d" % (self.entrySelector))
+        print("    rangeShift    = %d" % (self.rangeShift))
+        print("    endCount      = {0}".format(self.endCount))
+        print("    reservedPad   = %d" % (self.reservedPad))
+        print("    startCount    = {0}".format(self.startCount))
+        print("    idDelta       = {0}".format(self.idDelta))
+        print("    idRangeOffset = {0}".format(self.idRangeOffset))
+        print("    glyphIdArray  = {0}".format(self.glyphIdArray))
+
+class CmapSubTable14(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.format, buf                = ValUtil.ushortpop(buf)
+        self.length, buf                = ValUtil.ulongpop(buf)
+        self.numVarSelectorRecords, buf = ValUtil.ulongpop(buf)
+
+        return buf
+
+    def show(self):
+        print("  [CmapSubTable14]")
+        print("    format                = %d" % (self.format))
+        print("    length                = %d" % (self.length))
+        print("    numVarSelectorRecords = %d" % (self.numVarSelectorRecords))
+
+# cmap table
+##################################################
 # head table
 
 ## http://www.microsoft.com/typography/otspec/head.htm
@@ -2697,6 +2893,8 @@ class OtfParser(object):
             self.__table.append( GposTable(buf, tag) )
         elif tag.lower() == "gsub":
             self.__table.append( GsubTable(buf, tag) )
+        elif tag.lower() == "cmap":
+            self.__table.append( CmapTable(buf, tag) )
         elif tag.lower() == "head":
             self.__table.append( HeadTable(buf, tag) )
         elif tag.lower() == "name":
