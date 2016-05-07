@@ -1853,14 +1853,14 @@ class CmapSubTable(object):
             self.subtable = CmapSubTable14(buf)
         else:
             #raise MyError("currently not support format %d" % (format))
-            self.subtable = CmapSubTable(buf)
+            self.subtable = CmapSubTableDummy(buf)
 
         return self.subtable.buf
 
     def show(self):
         self.subtable.show()
 
-class CmapSubTable(object):
+class CmapSubTableDummy(object):
     def __init__(self, buf):
         self.buf = self.parse(buf)
 
