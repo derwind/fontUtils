@@ -2596,6 +2596,34 @@ class BaseTable(Table):
 
 # BASE table
 ##################################################
+# GDEF table
+
+# https://www.microsoft.com/typography/otspec/gdef.htm
+class GdefTable(Table):
+    def __init__(self, buf, tag):
+        super(GdefTable, self).__init__(buf, tag)
+
+    def parse(self, buf):
+        super(GdefTable, self).parse(buf)
+
+        self.Version, buf            = ValUtil.ulongpop(buf)
+        self.GlyphClassDef, buf      = OTData.Offset(buf)
+        self.AttachList, buf         = OTData.Offset(buf)
+        self.LigCaretList, buf       = OTData.Offset(buf)
+        self.MarkAttachClassDef, buf = OTData.Offset(buf)
+
+        return buf
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        print("  Version             = 0x%08x" % (self.Version))
+        print("  GlyphClassDef       = %s" % (self.GlyphClassDef))
+        print("  AttachList          = %s" % (self.AttachList))
+        print("  LigCaretList        = %s" % (self.LigCaretList))
+        print("  MarkAttachClassDef  = %s" % (self.MarkAttachClassDef))
+
+# GDEF table
+##################################################
 # FFTM table  the FontForge time stamp table
 
 # https://fontforge.github.io/non-standard.html#FFTM
@@ -3438,6 +3466,8 @@ class OtfParser(object):
             self.__table.append( PostTable(buf, tag) )
         elif tag.lower() == "vorg":
             self.__table.append( VorgTable(buf, tag) )
+        elif tag.lower() == "gdef":
+            self.__table.append( GdefTable(buf, tag) )
         elif tag.lower() == "fftm":
             self.__table.append( FftmTable(buf, tag) )
         else:
