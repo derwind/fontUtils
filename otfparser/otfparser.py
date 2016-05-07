@@ -2111,8 +2111,9 @@ class VheaTable(Table):
 
 ## https://www.microsoft.com/typography/otspec/hmtx.htm
 class HmtxTable(Table):
-    def __init__(self, buf, tag, numberOfHMetrics):
+    def __init__(self, buf, tag, numberOfHMetrics, numGlyphs):
         self.numberOfHMetrics = numberOfHMetrics
+        self.numGlyphs        = numGlyphs
         super(HmtxTable, self).__init__(buf, tag)
 
     def parse(self, buf):
@@ -2124,43 +2125,15 @@ class HmtxTable(Table):
             self.hMetrics.append(hMtx)
             buf = hMtx.buf
 
-        self.version_number, buf = ValUtil.ulongpop(buf)
-        self.font_revision, buf = ValUtil.ulongpop(buf)
-        self.check_sum_adjustment, buf = ValUtil.ulongpop(buf)
-        self.magic_number, buf = ValUtil.ulongpop(buf)
-        self.flags, buf = ValUtil.ushortpop(buf)
-        self.units_per_em, buf = ValUtil.ushortpop(buf)
-        self.created, buf = OTData.LONGDATETIME(buf)
-        self.modified, buf = OTData.LONGDATETIME(buf)
-        self.xmin, buf = ValUtil.sshortpop(buf)
-        self.ymin, buf = ValUtil.sshortpop(buf)
-        self.xmax, buf = ValUtil.sshortpop(buf)
-        self.ymax, buf = ValUtil.sshortpop(buf)
-        self.mac_style, buf = ValUtil.ushortpop(buf)
-        self.lowest_rec_ppem, buf = ValUtil.ushortpop(buf)
-        self.font_direction_hint, buf = ValUtil.sshortpop(buf)
-        self.index_to_loc_format, buf = ValUtil.sshortpop(buf)
-        self.glyph_buf_format, buf = ValUtil.sshortpop(buf)
+        self.leftSideBearing, buf = ValUtil.sshortspop(buf, self.numGlyphs-1)
+
+        return buf
 
     def show(self):
         print("[Table(%s)]" % (self.tag))
-        print("  version_number       = 0x%08x" % (self.version_number))
-        print("  font_revision        = %u" % (self.font_revision))
-        print("  check_sum_adjustment = 0x%08x" % (self.check_sum_adjustment))
-        print("  magic_number         = 0x%08x" % (self.magic_number))
-        print("  flags                = %s" % (format(self.flags, '016b')))
-        print("  units_per_em         = %u" % (self.units_per_em))
-        print("  created              = %s" % (LongDateTime.to_date_str(self.created)))
-        print("  modified             = %s" % (LongDateTime.to_date_str(self.modified)))
-        print("  xmin                 = %d" % (self.xmin))
-        print("  ymin                 = %d" % (self.ymin))
-        print("  xmax                 = %d" % (self.xmax))
-        print("  ymax                 = %d" % (self.ymax))
-        print("  mac_style            = %s" % (format(self.mac_style, '016b')))
-        print("  lowest_rec_ppem      = %u" % (self.lowest_rec_ppem))
-        print("  font_direction_hint  = %d" % (self.font_direction_hint))
-        print("  index_to_loc_format  = %d" % (self.index_to_loc_format))
-        print("  glyph_buf_format     = %d" % (self.glyph_buf_format))
+        for hMtx in self.hMetrics:
+            hMtx.show()
+        print("  leftSideBearing = {0}".format(self.leftSideBearing))
 
 class longHorMetric(object):
     def __init__(self, buf):
@@ -2177,6 +2150,50 @@ class longHorMetric(object):
         print("    lsb          = %d" % (self.lsb))
 
 # hmtx table
+##################################################
+# vmtx table
+
+## https://www.microsoft.com/typography/otspec/vmtx.htm
+class VmtxTable(Table):
+    def __init__(self, buf, tag, numOfLongVerMetrics, numGlyphs):
+        self.numOfLongVerMetrics = numOfLongVerMetrics
+        self.numGlyphs           = numGlyphs
+        super(VmtxTable, self).__init__(buf, tag)
+
+    def parse(self, buf):
+        super(VmtxTable, self).parse(buf)
+
+        self.vMetrics = []
+        for i in range(self.numOfLongVerMetrics):
+            vMtx = longVerMetric(buf)
+            self.vMetrics.append(vMtx)
+            buf = vMtx.buf
+
+        self.topSideBearing, buf = ValUtil.sshortspop(buf, self.numGlyphs-1)
+
+        return buf
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        for vMtx in self.vMetrics:
+            vMtx.show()
+        print("  topSideBearing   = {0}".format(self.topSideBearing))
+
+class longVerMetric(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.advanceHeight, buf  = ValUtil.ushortpop(buf)
+        self.topSideBearing, buf = ValUtil.sshortpop(buf)
+        return buf
+
+    def show(self):
+        print("  [longVerMetric]")
+        print("    advanceHeight  = %d" % (self.advanceHeight))
+        print("    topSideBearing = %d" % (self.topSideBearing))
+
+# vmtx table
 ##################################################
 # maxp table
 
@@ -2209,8 +2226,8 @@ class MaxpTable(Table):
 
     def show(self):
         print("[Table(%s)]" % (self.tag))
-        print("  version               = 0x%08x" % (self.version))
-        print("  numGlyphs             = %d" % (self.numGlyphs))
+        print("  version   = 0x%08x" % (self.version))
+        print("  numGlyphs = %d" % (self.numGlyphs))
         if self.version >= 0x00010000:
             print("  maxPoints             = %d" % (self.maxPoints))
             print("  maxContours           = %d" % (self.maxContours))
@@ -2405,6 +2422,89 @@ class OS_2Table(Table):
             print("  usUpperOpticalPointSize = %d" % (self.usUpperOpticalPointSize))
 
 # OS/2 table
+##################################################
+# post table
+
+# https://www.microsoft.com/typography/otspec/post.htm
+class PostTable(Table):
+    def __init__(self, buf, tag):
+        super(PostTable, self).__init__(buf, tag)
+
+    def parse(self, buf):
+        super(PostTable, self).parse(buf)
+
+        self.Version, buf            = OTData.Fixed(buf)
+        self.italicAngle, buf        = OTData.Fixed(buf)
+        self.underlinePosition, buf  = OTData.FWORD(buf)
+        self.underlineThickness, buf = OTData.FWORD(buf)
+        self.isFixedPitch, buf       = ValUtil.ulongpop(buf)
+        self.minMemType42, buf       = ValUtil.ulongpop(buf)
+        self.maxMemType42, buf       = ValUtil.ulongpop(buf)
+        self.minMemType1, buf        = ValUtil.ulongpop(buf)
+        self.maxMemType1, buf        = ValUtil.ulongpop(buf)
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        print("  Version            = 0x%08x" % (self.Version))
+        print("  italicAngle        = %d.%d" % (self.italicAngle >> 16, self.italicAngle & 0xff))
+        print("  underlinePosition  = %d" % (self.underlinePosition))
+        print("  underlineThickness = %d" % (self.underlineThickness))
+        print("  isFixedPitch       = %d" % (self.isFixedPitch))
+        print("  minMemType42       = %d" % (self.minMemType42))
+        print("  maxMemType42       = %d" % (self.maxMemType42))
+        print("  minMemType1        = %d" % (self.minMemType1))
+        print("  maxMemType1        = %d" % (self.maxMemType1))
+
+# post table
+##################################################
+# VORG table
+
+# https://www.microsoft.com/typography/otspec/vorg.htm
+class VorgTable(Table):
+    def __init__(self, buf, tag):
+        super(VorgTable, self).__init__(buf, tag)
+
+    def parse(self, buf):
+        super(VorgTable, self).parse(buf)
+
+        self.majorVersion, buf          = ValUtil.ushortpop(buf)
+        self.minorVersion, buf          = ValUtil.ushortpop(buf)
+        self.defaultVertOriginY, buf    = ValUtil.sshortpop(buf)
+        self.numVertOriginYMetrics, buf = ValUtil.ushortpop(buf)
+
+        self.vertOriginYMetrics = []
+        for i in range(self.numVertOriginYMetrics):
+            vorgTMet = vertOriginYMetrics(buf)
+            self.vertOriginYMetrics.append(vorgTMet)
+            buf = vorgTMet.buf
+
+        return buf
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        print("  majorVersion          = %d" % (self.majorVersion))
+        print("  minorVersion          = %d" % (self.minorVersion))
+        print("  defaultVertOriginY    = %d" % (self.defaultVertOriginY))
+        print("  numVertOriginYMetrics = %d" % (self.numVertOriginYMetrics))
+
+        for vorgTMet in self.vertOriginYMetrics:
+            vorgTMet.show()
+
+class vertOriginYMetrics(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.glyphIndex, buf  = ValUtil.ushortpop(buf)
+        self.vertOriginY, buf = ValUtil.sshortpop(buf)
+        return buf
+
+    def show(self):
+        print("  [vertOriginYMetrics]")
+        print("    glyphIndex  = %d" % (self.glyphIndex))
+        print("    vertOriginY = %d" % (self.vertOriginY))
+
+# VORG table
 ##################################################
 # CFF
 
@@ -3080,7 +3180,9 @@ class OtfParser(object):
         self.__header = None
         self.__table_record = []
         self.__table        = []
-        self.numberOfHMetrics = 0
+        self.numberOfHMetrics    = 0
+        self.numOfLongVerMetrics = 0
+        self.numGlyphs           = 0
 
     def parse(self, file):
         self.__parse(file)
@@ -3101,12 +3203,37 @@ class OtfParser(object):
             bin_buf = infile.read(12)
             self.__header = Header(bin_buf)
             num_tables = self.__header.get_num_tables()
-            for i in range(num_tables):
-                bin_buf = infile.read(16)
-                self.__table_record.append( TableRecord(bin_buf) )
+
+            self.__table_record = self.__create_table_record(infile, num_tables)
 
             for table_record in self.__table_record:
                 self.__create_table(table_record, infile)
+
+    def __create_table_record(self, infile, num_tables):
+        record = []
+        for i in range(num_tables):
+            bin_buf = infile.read(16)
+            record.append( TableRecord(bin_buf) )
+
+        maxp_idx = -1
+        hmtx_idx = -1
+        vmtx_idx = -1
+        for i, rec in enumerate(record):
+            if rec.get_tag() == "maxp":
+                maxp_idx = i
+            elif rec.get_tag() == "hmtx":
+                hmtx_idx = i
+            elif rec.get_tag() == "vmtx":
+                vmtx_idx = i
+
+        if maxp_idx >= 0 and hmtx_idx >= 0 and hmtx_idx < maxp_idx:
+            record[maxp_idx], record[hmtx_idx] = record[hmtx_idx], record[maxp_idx]
+            maxp_idx = hmtx_idx
+        if maxp_idx >= 0 and vmtx_idx >= 0 and vmtx_idx < maxp_idx:
+            record[maxp_idx], record[vmtx_idx] = record[vmtx_idx], record[maxp_idx]
+            maxp_idx = vmtx_idx
+
+        return record
 
     ## get table corresponding to given TableRecord
     def __create_table(self, table_record, infile):
@@ -3135,15 +3262,25 @@ class OtfParser(object):
             self.numberOfHMetrics = hhea.numberOfHMetrics
             self.__table.append( hhea )
         elif tag.lower() == "vhea":
-            self.__table.append( VheaTable(buf, tag) )
-#        elif tag.lower() == "hmtx":
-#            self.__table.append( HmtxTable(buf, tag, self.numberOfHMetrics) )
+            vhea = VheaTable(buf, tag)
+            self.numOfLongVerMetrics = vhea.numOfLongVerMetrics
+            self.__table.append( vhea )
+        elif tag.lower() == "hmtx":
+            self.__table.append( HmtxTable(buf, tag, self.numberOfHMetrics, self.numGlyphs) )
+        elif tag.lower() == "vmtx":
+            self.__table.append( VmtxTable(buf, tag, self.numOfLongVerMetrics, self.numGlyphs) )
         elif tag.lower() == "maxp":
-            self.__table.append( MaxpTable(buf, tag) )
+            maxp = MaxpTable(buf, tag)
+            self.numGlyphs = maxp.numGlyphs
+            self.__table.append( maxp )
         elif tag.lower() == "name":
             self.__table.append( NameTable(buf, tag) )
         elif tag.lower() == "os/2":
             self.__table.append( OS_2Table(buf, tag) )
+        elif tag.lower() == "post":
+            self.__table.append( PostTable(buf, tag) )
+        elif tag.lower() == "vorg":
+            self.__table.append( VorgTable(buf, tag) )
         else:
             self.__table.append( Table(buf, tag) )
 
