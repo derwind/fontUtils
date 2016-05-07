@@ -205,6 +205,14 @@ class OTData(object):
         return ValUtil.ulongpop(buf)
 
     @staticmethod
+    def FWORD(buf):
+        return ValUtil.sshortpop(buf)
+
+    @staticmethod
+    def UFWORD(buf):
+        return ValUtil.ushortpop(buf)
+
+    @staticmethod
     def LONGDATETIME(buf):
         return ValUtil.ulonglongpop(buf)
 
@@ -1995,6 +2003,58 @@ class HeadTable(Table):
 
 # head table
 ##################################################
+# hhea table
+
+# https://www.microsoft.com/typography/otspec/hhea.htm
+class HheaTable(Table):
+    def __init__(self, buf, tag):
+        super(HheaTable, self).__init__(buf, tag)
+
+    def parse(self, buf):
+        super(HheaTable, self).parse(buf)
+
+        self.version, buf             = OTData.Fixed(buf)
+        self.Ascender, buf            = OTData.FWORD(buf)
+        self.Descender, buf           = OTData.FWORD(buf)
+        self.LineGap, buf             = OTData.FWORD(buf)
+        self.advanceWidthMax, buf     = OTData.UFWORD(buf)
+        self.minLeftSideBearing, buf  = OTData.FWORD(buf)
+        self.minRightSideBearing, buf = OTData.FWORD(buf)
+        self.xMaxExtent, buf          = OTData.FWORD(buf)
+        self.caretSlopeRise, buf      = ValUtil.sshortpop(buf)
+        self.caretSlopeRun, buf       = ValUtil.sshortpop(buf)
+        self.caretOffset, buf         = ValUtil.sshortpop(buf)
+        self.reserved1, buf           = ValUtil.sshortpop(buf)
+        self.reserved2, buf           = ValUtil.sshortpop(buf)
+        self.reserved3, buf           = ValUtil.sshortpop(buf)
+        self.reserved4, buf           = ValUtil.sshortpop(buf)
+        self.metricDataFormat, buf    = ValUtil.sshortpop(buf)
+        self.numberOfHMetrics, buf    = ValUtil.ushortpop(buf)
+
+        return buf
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        print("  version             = 0x%08x" % (self.version))
+        print("  Ascender            = %d" % (self.Ascender))
+        print("  Descender           = %d" % (self.Descender))
+        print("  LineGap             = %d" % (self.LineGap))
+        print("  advanceWidthMax     = %d" % (self.advanceWidthMax))
+        print("  minLeftSideBearing  = %d" % (self.minLeftSideBearing))
+        print("  minRightSideBearing = %d" % (self.minRightSideBearing))
+        print("  xMaxExtent          = %d" % (self.xMaxExtent))
+        print("  caretSlopeRise      = %d" % (self.caretSlopeRise))
+        print("  caretSlopeRun       = %d" % (self.caretSlopeRun))
+        print("  caretOffset         = %d" % (self.caretOffset))
+        print("  reserved1           = %d" % (self.reserved1))
+        print("  reserved2           = %d" % (self.reserved2))
+        print("  reserved3           = %d" % (self.reserved3))
+        print("  reserved4           = %d" % (self.reserved4))
+        print("  metricDataFormat    = %d" % (self.metricDataFormat))
+        print("  numberOfHMetrics    = %d" % (self.numberOfHMetrics))
+
+# hhea table
+##################################################
 # name table
 
 class NameTable(Table):
@@ -2134,7 +2194,6 @@ class OS_2Table(Table):
         print("  version             = %d" % (self.version))
         print("  xAvgCharWidth       = %d" % (self.xAvgCharWidth))
         print("  usWeightClass       = %d" % (self.usWeightClass))
-
         print("  usWidthClass        = %d" % (self.usWidthClass))
         print("  fsType              = %d" % (self.fsType))
         print("  ySubscriptXSize     = %d" % (self.ySubscriptXSize))
@@ -2897,6 +2956,8 @@ class OtfParser(object):
             self.__table.append( CmapTable(buf, tag) )
         elif tag.lower() == "head":
             self.__table.append( HeadTable(buf, tag) )
+        elif tag.lower() == "hhea":
+            self.__table.append( HheaTable(buf, tag) )
         elif tag.lower() == "name":
             self.__table.append( NameTable(buf, tag) )
         elif tag.lower() == "os/2":
