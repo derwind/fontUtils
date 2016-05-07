@@ -1747,7 +1747,7 @@ class TableRecord(object):
         return 16
 
     def get_tag(self):
-        return "%c%c%c%c" % (chr(self.__tag >> 24 & 0xff), chr(self.__tag >> 16 & 0xff), chr(self.__tag >> 8 & 0xff),chr(self.__tag & 0xff))
+        return "%c%c%c%c" % (chr(self.__tag>>24&0xff), chr(self.__tag>>16&0xff), chr(self.__tag>>8&0xff),chr(self.__tag&0xff))
 
     def get_check_sum(self):
         return self.__check_sum
@@ -1760,7 +1760,7 @@ class TableRecord(object):
 
     def show(self):
         print("[TableRecord]")
-        print("  tag           = %c%c%c%c" % (chr(self.__tag >> 24 & 0xff), chr(self.__tag >> 16 & 0xff), chr(self.__tag >> 8 & 0xff),chr(self.__tag & 0xff)))
+        print("  tag           = %s" % (self.get_tag()))
         print("  check_sum     = 0x%0x" % (self.__check_sum))
         print("  offset        = %u" % (self.__offset))
         print("  length        = %u" % (self.__length))
