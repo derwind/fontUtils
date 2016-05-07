@@ -7,6 +7,7 @@ import os, sys, math
 #import struct
 import datetime
 
+PARSE_TYPE2CHARSTRING = True
 
 ################################################################################
 
@@ -2602,12 +2603,12 @@ class CffTable(Table):
             offset = cffDict[TopDictOp.Encoding][0]
             self.encodings    = CffEncodings(self.buf_head[offset:])
         self.charStringsIndex = None
-        if TopDictOp.CharStrings in cffDict:
+        if PARSE_TYPE2CHARSTRING and TopDictOp.CharStrings in cffDict:
             offset = cffDict[TopDictOp.CharStrings][0]
             charstringType = cffDict[TopDictOp.CharstringType][0]
             self.charStringsIndex = CharStringsIndex(self.buf_head[offset:], charstringType)
         self.charsets         = None
-        if TopDictOp.charset in cffDict:
+        if PARSE_TYPE2CHARSTRING and TopDictOp.charset in cffDict:
             offset = cffDict[TopDictOp.charset][0]
             self.charsets     = CffCharsets(self.buf_head[offset:], self.charStringsIndex.count)
         self.FDSelect         = None
