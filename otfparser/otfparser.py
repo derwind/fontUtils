@@ -2055,6 +2055,179 @@ class HheaTable(Table):
 
 # hhea table
 ##################################################
+# vhea table
+
+# https://www.microsoft.com/typography/otspec/vhea.htm
+class VheaTable(Table):
+    def __init__(self, buf, tag):
+        super(VheaTable, self).__init__(buf, tag)
+
+    def parse(self, buf):
+        super(VheaTable, self).parse(buf)
+
+        self.version, buf              = OTData.Fixed(buf)
+        self.ascent, buf               = ValUtil.sshortpop(buf)
+        self.descent, buf              = ValUtil.sshortpop(buf)
+        self.lineGap, buf              = ValUtil.sshortpop(buf)
+        self.advanceHeightMax, buf     = ValUtil.sshortpop(buf)
+        self.minTopSideBearing, buf    = ValUtil.sshortpop(buf)
+        self.minBottomSideBearing, buf = ValUtil.sshortpop(buf)
+        self.yMaxExtent, buf           = ValUtil.sshortpop(buf)
+        self.caretSlopeRise, buf       = ValUtil.sshortpop(buf)
+        self.caretSlopeRun, buf        = ValUtil.sshortpop(buf)
+        self.caretOffset, buf          = ValUtil.sshortpop(buf)
+        self.reserved1, buf            = ValUtil.sshortpop(buf)
+        self.reserved2, buf            = ValUtil.sshortpop(buf)
+        self.reserved3, buf            = ValUtil.sshortpop(buf)
+        self.reserved4, buf            = ValUtil.sshortpop(buf)
+        self.metricDataFormat, buf     = ValUtil.sshortpop(buf)
+        self.numOfLongVerMetrics, buf  = ValUtil.ushortpop(buf)
+
+        return buf
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        print("  version              = 0x%08x" % (self.version))
+        print("  ascent               = %d" % (self.ascent))
+        print("  descent              = %d" % (self.descent))
+        print("  lineGap              = %d" % (self.lineGap))
+        print("  advanceHeightMax     = %d" % (self.advanceHeightMax))
+        print("  minTopSideBearing    = %d" % (self.minTopSideBearing))
+        print("  minBottomSideBearing = %d" % (self.minBottomSideBearing))
+        print("  yMaxExtent           = %d" % (self.yMaxExtent))
+        print("  caretSlopeRise       = %d" % (self.caretSlopeRise))
+        print("  caretSlopeRun        = %d" % (self.caretSlopeRun))
+        print("  caretOffset          = %d" % (self.caretOffset))
+        print("  reserved1            = %d" % (self.reserved1))
+        print("  reserved2            = %d" % (self.reserved2))
+        print("  reserved3            = %d" % (self.reserved3))
+        print("  reserved4            = %d" % (self.reserved4))
+        print("  metricDataFormat     = %d" % (self.metricDataFormat))
+        print("  numOfLongVerMetrics  = %d" % (self.numOfLongVerMetrics))
+
+# vhea table
+##################################################
+# hmtx table
+
+## https://www.microsoft.com/typography/otspec/hmtx.htm
+class HmtxTable(Table):
+    def __init__(self, buf, tag, numberOfHMetrics):
+        self.numberOfHMetrics = numberOfHMetrics
+        super(HmtxTable, self).__init__(buf, tag)
+
+    def parse(self, buf):
+        super(HmtxTable, self).parse(buf)
+
+        self.hMetrics = []
+        for i in range(self.numberOfHMetrics):
+            hMtx = longHorMetric(buf)
+            self.hMetrics.append(hMtx)
+            buf = hMtx.buf
+
+        self.version_number, buf = ValUtil.ulongpop(buf)
+        self.font_revision, buf = ValUtil.ulongpop(buf)
+        self.check_sum_adjustment, buf = ValUtil.ulongpop(buf)
+        self.magic_number, buf = ValUtil.ulongpop(buf)
+        self.flags, buf = ValUtil.ushortpop(buf)
+        self.units_per_em, buf = ValUtil.ushortpop(buf)
+        self.created, buf = OTData.LONGDATETIME(buf)
+        self.modified, buf = OTData.LONGDATETIME(buf)
+        self.xmin, buf = ValUtil.sshortpop(buf)
+        self.ymin, buf = ValUtil.sshortpop(buf)
+        self.xmax, buf = ValUtil.sshortpop(buf)
+        self.ymax, buf = ValUtil.sshortpop(buf)
+        self.mac_style, buf = ValUtil.ushortpop(buf)
+        self.lowest_rec_ppem, buf = ValUtil.ushortpop(buf)
+        self.font_direction_hint, buf = ValUtil.sshortpop(buf)
+        self.index_to_loc_format, buf = ValUtil.sshortpop(buf)
+        self.glyph_buf_format, buf = ValUtil.sshortpop(buf)
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        print("  version_number       = 0x%08x" % (self.version_number))
+        print("  font_revision        = %u" % (self.font_revision))
+        print("  check_sum_adjustment = 0x%08x" % (self.check_sum_adjustment))
+        print("  magic_number         = 0x%08x" % (self.magic_number))
+        print("  flags                = %s" % (format(self.flags, '016b')))
+        print("  units_per_em         = %u" % (self.units_per_em))
+        print("  created              = %s" % (LongDateTime.to_date_str(self.created)))
+        print("  modified             = %s" % (LongDateTime.to_date_str(self.modified)))
+        print("  xmin                 = %d" % (self.xmin))
+        print("  ymin                 = %d" % (self.ymin))
+        print("  xmax                 = %d" % (self.xmax))
+        print("  ymax                 = %d" % (self.ymax))
+        print("  mac_style            = %s" % (format(self.mac_style, '016b')))
+        print("  lowest_rec_ppem      = %u" % (self.lowest_rec_ppem))
+        print("  font_direction_hint  = %d" % (self.font_direction_hint))
+        print("  index_to_loc_format  = %d" % (self.index_to_loc_format))
+        print("  glyph_buf_format     = %d" % (self.glyph_buf_format))
+
+class longHorMetric(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.advanceWidth, buf = ValUtil.ushortpop(buf)
+        self.lsb, buf          = ValUtil.sshortpop(buf)
+        return buf
+
+    def show(self):
+        print("  [longHorMetric]")
+        print("    advanceWidth = %d" % (self.advanceWidth))
+        print("    lsb          = %d" % (self.lsb))
+
+# hmtx table
+##################################################
+# maxp table
+
+# https://www.microsoft.com/typography/otspec/maxp.htm
+class MaxpTable(Table):
+    def __init__(self, buf, tag):
+        super(MaxpTable, self).__init__(buf, tag)
+
+    def parse(self, buf):
+        super(MaxpTable, self).parse(buf)
+
+        self.version, buf   = OTData.Fixed(buf)
+        self.numGlyphs, buf = ValUtil.ushortpop(buf)
+        if self.version >= 0x00010000:
+            self.maxPoints, buf             = ValUtil.ushortpop(buf)
+            self.maxContours, buf           = ValUtil.ushortpop(buf)
+            self.maxCompositePoints, buf    = ValUtil.ushortpop(buf)
+            self.maxCompositeContours, buf  = ValUtil.ushortpop(buf)
+            self.maxZones, buf              = ValUtil.ushortpop(buf)
+            self.maxTwilightPoints, buf     = ValUtil.ushortpop(buf)
+            self.maxStorage, buf            = ValUtil.ushortpop(buf)
+            self.maxFunctionDefs, buf       = ValUtil.ushortpop(buf)
+            self.maxInstructionDefs, buf    = ValUtil.ushortpop(buf)
+            self.maxStackElements, buf      = ValUtil.ushortpop(buf)
+            self.maxSizeOfInstructions, buf = ValUtil.ushortpop(buf)
+            self.maxComponentElements, buf  = ValUtil.ushortpop(buf)
+            self.maxComponentDepth, buf     = ValUtil.ushortpop(buf)
+
+        return buf
+
+    def show(self):
+        print("[Table(%s)]" % (self.tag))
+        print("  version               = 0x%08x" % (self.version))
+        print("  numGlyphs             = %d" % (self.numGlyphs))
+        if self.version >= 0x00010000:
+            print("  maxPoints             = %d" % (self.maxPoints))
+            print("  maxContours           = %d" % (self.maxContours))
+            print("  maxCompositePoints    = %d" % (self.maxCompositePoints))
+            print("  maxCompositeContours  = %d" % (self.maxCompositeContours))
+            print("  maxZones              = %d" % (self.maxZones))
+            print("  maxTwilightPoints     = %d" % (self.maxTwilightPoints))
+            print("  maxStorage            = %d" % (self.maxStorage))
+            print("  maxFunctionDefs       = %d" % (self.maxFunctionDefs))
+            print("  maxInstructionDefs    = %d" % (self.maxInstructionDefs))
+            print("  maxStackElements      = %d" % (self.maxStackElements))
+            print("  maxSizeOfInstructions = %d" % (self.maxSizeOfInstructions))
+            print("  maxComponentElements  = %d" % (self.maxComponentElements))
+            print("  maxComponentDepth     = %d" % (self.maxComponentDepth))
+
+# maxp table
+##################################################
 # name table
 
 class NameTable(Table):
@@ -2300,7 +2473,7 @@ class CffHeader(object):
         self.offSize, buf = CFFData.OffSize(buf)
         return buf
 
-    def show(self, storage = None):
+    def show(self):
         print("  [CffHeader]")
         print("    major   = %d" % (self.major))
         print("    minor   = %d" % (self.minor))
@@ -2907,6 +3080,7 @@ class OtfParser(object):
         self.__header = None
         self.__table_record = []
         self.__table        = []
+        self.numberOfHMetrics = 0
 
     def parse(self, file):
         self.__parse(file)
@@ -2957,7 +3131,15 @@ class OtfParser(object):
         elif tag.lower() == "head":
             self.__table.append( HeadTable(buf, tag) )
         elif tag.lower() == "hhea":
-            self.__table.append( HheaTable(buf, tag) )
+            hhea = HheaTable(buf, tag)
+            self.numberOfHMetrics = hhea.numberOfHMetrics
+            self.__table.append( hhea )
+        elif tag.lower() == "vhea":
+            self.__table.append( VheaTable(buf, tag) )
+#        elif tag.lower() == "hmtx":
+#            self.__table.append( HmtxTable(buf, tag, self.numberOfHMetrics) )
+        elif tag.lower() == "maxp":
+            self.__table.append( MaxpTable(buf, tag) )
         elif tag.lower() == "name":
             self.__table.append( NameTable(buf, tag) )
         elif tag.lower() == "os/2":
