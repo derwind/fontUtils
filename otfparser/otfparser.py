@@ -1747,7 +1747,7 @@ class TableRecord(object):
         return 16
 
     def get_tag(self):
-        return "%c%c%c%c" % (chr(self.__tag>>24&0xff), chr(self.__tag>>16&0xff), chr(self.__tag>>8&0xff),chr(self.__tag&0xff))
+        return "%c%c%c%c" % (chr(self.__tag>>24&0xff), chr(self.__tag>>16&0xff), chr(self.__tag>>8&0xff), chr(self.__tag&0xff))
 
     def get_check_sum(self):
         return self.__check_sum
@@ -2713,6 +2713,8 @@ class CffDictData(object):
                 operand, buf = CffDictData._operand(buf)
                 operands.append(operand)
 
+    # Appendix H  CFF DICT Encoding (p.59)
+    # Table 9 Top DICT Operator Entries (p.15)
     @staticmethod
     def _is_operator(b):
         if 0 <= b <= 21:
@@ -2952,7 +2954,7 @@ class Type2Charstring(object):
         while len(buf) > 0:
             b, buf = ValUtil.ucharpop(buf)
             # Table 1 Type 2 Charstring Encoding Values (p.13)
-            if 0<= b <= 11: # operators
+            if 0 <= b <= 11: # operators
                 if b == Type2Op.hstem:
                     prev_is_hstem = True
                     stemnum += len(args)/2
