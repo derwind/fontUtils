@@ -3,8 +3,7 @@
 
 # http://www.microsoft.com/typography/otspec/otff.htm
 
-import os
-import sys
+import os, sys, math
 #import struct
 import datetime
 
@@ -144,6 +143,7 @@ class ValUtil(object):
     def ushortspop(buf, n):
         return ValUtil.ushorts(buf, n), buf[2*n:]
 
+    @staticmethod
     def sint24(buf):
         global py_ver
         n = ValUtil.uint24(buf)
@@ -165,6 +165,7 @@ class ValUtil(object):
     def uint24pop(buf):
         return ValUtil.uint24(buf), buf[3:]
 
+    @staticmethod
     def slong(buf):
         global py_ver
         n = ValUtil.ulong(buf)
@@ -190,9 +191,11 @@ class ValUtil(object):
     def ulonglong(buf):
         global py_ver
         if py_ver == 2:
-            return ord(buf[0]) << 56 | ord(buf[1]) << 48 | ord(buf[2]) << 40 | ord(buf[3]) << 32 | ord(buf[4]) << 24 | ord(buf[5]) << 16 | ord(buf[6]) << 8 | ord(buf[7])
+            return ord(buf[0]) << 56 | ord(buf[1]) << 48 | ord(buf[2]) << 40 | ord(buf[3]) << 32 | \
+                   ord(buf[4]) << 24 | ord(buf[5]) << 16 | ord(buf[6]) << 8  | ord(buf[7])
         else:
-            return buf[0] << 56 | buf[1] << 48 | buf[2] << 40 | buf[3] << 32 | buf[4] << 24 | buf[5] << 16 | buf[6] << 8 | buf[7]
+            return buf[0] << 56 | buf[1] << 48 | buf[2] << 40 | buf[3] << 32 | \
+                   buf[4] << 24 | buf[5] << 16 | buf[6] << 8  | buf[7]
 
     @staticmethod
     def ulonglongpop(buf):
@@ -1841,15 +1844,33 @@ class CmapSubTable(object):
             self.subtable = CmapSubTable2(buf)
         elif format == 4:
             self.subtable = CmapSubTable4(buf)
+        elif format == 6:
+            self.subtable = CmapSubTable6(buf)
+        elif format == 12:
+            self.subtable = CmapSubTable12(buf)
         elif format == 14:
             self.subtable = CmapSubTable14(buf)
         else:
-            raise MyError("currently not support")
+            #raise MyError("currently not support format %d" % (format))
+            self.subtable = CmapSubTable(buf)
 
         return self.subtable.buf
 
     def show(self):
         self.subtable.show()
+
+class CmapSubTable(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.format, buf = ValUtil.ushortpop(buf)
+
+        return buf
+
+    def show(self):
+        print("  [CmapSubTable%d]" % (self.format))
+        print("    format = %d" % (self.format))
 
 class CmapSubTable0(object):
     def __init__(self, buf):
@@ -1933,6 +1954,50 @@ class CmapSubTable4(object):
         print("    idDelta       = {0}".format(self.idDelta))
         print("    idRangeOffset = {0}".format(self.idRangeOffset))
         print("    glyphIdArray  = {0}".format(self.glyphIdArray))
+
+class CmapSubTable6(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.format, buf        = ValUtil.ushortpop(buf)
+        self.length, buf        = ValUtil.ushortpop(buf)
+        self.language, buf      = ValUtil.ushortpop(buf)
+        self.firstCode, buf     = ValUtil.ushortpop(buf)
+        self.entryCount, buf    = ValUtil.ushortpop(buf)
+        self.glyphIdArray , buf = ValUtil.ushortspop(buf, self.entryCount)
+
+        return buf
+
+    def show(self):
+        print("  [CmapSubTable6]")
+        print("    format       = %d" % (self.format))
+        print("    length       = %d" % (self.length))
+        print("    language     = %d" % (self.language))
+        print("    firstCode    = %d" % (self.firstCode))
+        print("    entryCount   = %d" % (self.entryCount))
+        print("    glyphIdArray = {0}".format(self.glyphIdArray))
+
+class CmapSubTable12(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.format, buf   = ValUtil.ushortpop(buf)
+        self.reserved, buf = ValUtil.ushortpop(buf)
+        self.length, buf   = ValUtil.ulongpop(buf)
+        self.language, buf = ValUtil.ulongpop(buf)
+        self.nGroups, buf  = ValUtil.ulongpop(buf)
+
+        return buf
+
+    def show(self):
+        print("  [CmapSubTable12]")
+        print("    format   = %d" % (self.format))
+        print("    reserved = %d" % (self.reserved))
+        print("    length   = %d" % (self.length))
+        print("    language = %d" % (self.language))
+        print("    nGroups  = %d" % (self.nGroups))
 
 class CmapSubTable14(object):
     def __init__(self, buf):
@@ -2853,11 +2918,19 @@ class Type2Charstring(object):
 
     # w? {hs* vs* cm* hm* mt subpath}? {mt subpath}* endchar
     def parse(self, buf):
+        stemnum = 0
+        prev_is_hstem = True
         args = []
         while len(buf) > 0:
             b, buf = ValUtil.ucharpop(buf)
             # Table 1 Type 2 Charstring Encoding Values (p.13)
             if 0<= b <= 11: # operators
+                if b == Type2Op.hstem:
+                    prev_is_hstem = True
+                    stemnum += len(args)/2
+                elif b == Type2Op.vstem:
+                    prev_is_hstem = False
+                    stemnum += len(args)/2
                 self.cmds.append( (b, args) )
                 args = []
             elif b == 12: # escape: next byte interpreted as additional operators
@@ -2866,12 +2939,26 @@ class Type2Charstring(object):
                 self.cmds.append( (op, args) )
                 args = []
             elif 13 <= b <= 18: # operators
+                if b == Type2Op.hstemhm:
+                    prev_is_hstem = True
+                    stemnum += len(args)/2
                 self.cmds.append( (b, args) )
                 args = []
             elif 19 <= b <= 20: # operators (hintmask and cntrmask)
-                # XXX: uhh...
-                raise
+                if len(args) > 0:
+                    if prev_is_hstem:
+                        self.cmds.append( (Type2Op.vstem, args) )
+                    else:
+                        self.cmds.append( (Type2Op.hstem, args) )
+                    prev_is_hstem = not prev_is_hstem
+                    stemnum += len(args)/2
+                mask_bytes_num = int(math.ceil(stemnum/8.))
+                stemnum = 0
+                mask, buf = ValUtil.bytespop(buf, mask_bytes_num)
             elif 21 <= b <= 27: # operators
+                if b == Type2Op.vstemhm:
+                    prev_is_hstem = False
+                    stemnum += len(args)/2
                 self.cmds.append( (b, args) )
                 args = []
             elif b == 28: # following 2 bytes interpreted as a 16-bit two’s complement number
