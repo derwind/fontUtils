@@ -2971,15 +2971,17 @@ class Type2Charstring(object):
                 args = []
             elif 19 <= b <= 20: # operators (hintmask and cntrmask)
                 if len(args) > 0:
+                    stemnum += len(args)/2
                     if prev_is_hstem:
                         self.cmds.append( (Type2Op.vstem, args) )
                     else:
                         self.cmds.append( (Type2Op.hstem, args) )
                     prev_is_hstem = not prev_is_hstem
-                    stemnum += len(args)/2
+                    args = []
                 mask_bytes_num = int(math.ceil(stemnum/8.))
                 stemnum = 0
                 mask, buf = ValUtil.bytespop(buf, mask_bytes_num)
+                self.cmds.append( (b, mask) )
             elif 21 <= b <= 27: # operators
                 if b == Type2Op.vstemhm:
                     prev_is_hstem = False
