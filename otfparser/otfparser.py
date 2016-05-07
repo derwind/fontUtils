@@ -2649,7 +2649,7 @@ class CffTable(Table):
         if self.charStringsIndex:
             self.charStringsIndex.show()
         if self.charsets:
-            self.charsets.show()
+            self.charsets.show(self.stringIndex, self.topDictIndex.isNameKeyed())
 
 # 5176.CFF.pdf  6 Header (p.13)
 class CffHeader(object):
@@ -2809,6 +2809,9 @@ class TopDictIndex(CffINDEXData):
     def __init__(self, buf):
         self.cffDict = []
         super(TopDictIndex, self).__init__(buf, "Top DICT")
+
+    def isNameKeyed(self):
+        return not TopDictOp.ROS in self.cffDict[0]
 
     def parse(self, buf):
         buf = super(TopDictIndex, self).parse(buf)
@@ -3038,11 +3041,21 @@ class CffCharsets(object):
 
         return buf
 
-    def show(self):
+    def show(self, stringIndex = None, isNameKeyed = True):
         print("  [Charsets]")
         if self.format == 0:
             print("    format  = %d" % (self.format))
-            print("    glyph    = {0}".format(self.glyph))
+            print("    glyph   = {0}".format(self.glyph))
+            for sid in self.glyph:
+                if isNameKeyed:
+                    name = ""
+                    if sid <= StdStr.nStdStr:
+                        name = StdStr.to_s(sid)
+                    elif stringIndex:
+                        name = stringIndex.data[sid - StdStr.nStdStr]
+                    print("      {0}: {1}".format(sid, name))
+                else:
+                    print("      {0}: CID{1}".format(sid, sid))
         elif self.format == 1:
             print("    format  = %d" % (self.format))
             print("    Range1  = {0}".format([(r.first, r.nLeft) for r in self.Range1]))
