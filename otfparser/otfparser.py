@@ -3155,11 +3155,11 @@ class CffDecorder(object):
             else:
                 b2, buf   = ValUtil.ucharpop(buf)
                 if b0 == 28:
-                    return b1<<8|b2, buf
+                    return ValUtil.signed(b1)<<8|b2, buf
                 elif b0 == 29:
                     b3, buf   = ValUtil.ucharpop(buf)
                     b4, buf   = ValUtil.ucharpop(buf)
-                    return b1<<24|b2<<16|b3<<8|b4, buf
+                    return ValUtil.signed(b1)<<24|b2<<16|b3<<8|b4, buf
                 else:
                     raise
 
