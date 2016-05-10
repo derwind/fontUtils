@@ -2905,7 +2905,7 @@ class TopDictIndex(CffINDEXData):
             TopDictOp.UnderlineThickness: [50],
             TopDictOp.PaintType:          [0],
             TopDictOp.CharstringType:     [2],
-            TopDictOp.FontMatrix:         [0.001, 0, 0, 0001, 0, 0],
+            TopDictOp.FontMatrix:         [0.001, 0, 0, 0.001, 0, 0],
             TopDictOp.FontBBox:           [0, 0, 0, 0],
             TopDictOp.StrokeWidth:        [0],
             TopDictOp.charset:            [0],
