@@ -2893,6 +2893,15 @@ class TopDictIndex(CffINDEXData):
                             s0 = stringIndex.data[v[0] - StdStr.nStdStr] if v[0] >= StdStr.nStdStr else StdStr.to_s(v[0])
                             s1 = stringIndex.data[v[1] - StdStr.nStdStr] if v[1] >= StdStr.nStdStr else StdStr.to_s(v[1])
                             print("    {0} = {1} << {2}-{3}-{4} >>".format(TopDictOp.to_s(k), v, s0, s1, v[2]))
+                        elif k == TopDictOp.Encoding:
+                            # Table 16 Encoding ID
+                            if v[0] == 0:
+                                s = "Standard Encoding"
+                            elif v[0] == 1:
+                                s = "Expert Encoding"
+                            else:
+                                s = "unknown Encoding"
+                            print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(k), v, s))
                         else:
                             print("    {0} = {1}".format(TopDictOp.to_s(k), v))
 
