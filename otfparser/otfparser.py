@@ -2880,30 +2880,30 @@ class TopDictIndex(CffINDEXData):
         if self.count != 0:
             for cffDict in self.cffDict:
                 print("    -----")
-                for k,v in cffDict.items():
+                for op, args in cffDict.items():
                     if stringIndex is None:
-                        print("    {0} = {1}".format(TopDictOp.to_s(k), v))
+                        print("    {0} = {1}".format(TopDictOp.to_s(op), args))
                     else:
-                        if k == TopDictOp.version or k == TopDictOp.Notice or k == TopDictOp.Copyright \
-                           or k == TopDictOp.FullName or k == TopDictOp.FamilyName or k == TopDictOp.Weight \
-                           or k == TopDictOp.PostScript or k == TopDictOp.BaseFontName or k == TopDictOp.FontName:
-                            s = stringIndex.data[v[0] - StdStr.nStdStr] if v[0] >= StdStr.nStdStr else StdStr.to_s(v[0])
-                            print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(k), v, s))
-                        elif k == TopDictOp.ROS:
-                            s0 = stringIndex.data[v[0] - StdStr.nStdStr] if v[0] >= StdStr.nStdStr else StdStr.to_s(v[0])
-                            s1 = stringIndex.data[v[1] - StdStr.nStdStr] if v[1] >= StdStr.nStdStr else StdStr.to_s(v[1])
-                            print("    {0} = {1} << {2}-{3}-{4} >>".format(TopDictOp.to_s(k), v, s0, s1, v[2]))
-                        elif k == TopDictOp.Encoding:
+                        if op == TopDictOp.version or op == TopDictOp.Notice or op == TopDictOp.Copyright \
+                           or op == TopDictOp.FullName or op == TopDictOp.FamilyName or op == TopDictOp.Weight \
+                           or op == TopDictOp.PostScript or op == TopDictOp.BaseFontName or op == TopDictOp.FontName:
+                            s = stringIndex.data[args[0] - StdStr.nStdStr] if args[0] >= StdStr.nStdStr else StdStr.to_s(args[0])
+                            print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(op), args, s))
+                        elif op == TopDictOp.ROS:
+                            s0 = stringIndex.data[v[0] - StdStr.nStdStr] if args[0] >= StdStr.nStdStr else StdStr.to_s(args[0])
+                            s1 = stringIndex.data[v[1] - StdStr.nStdStr] if args[1] >= StdStr.nStdStr else StdStr.to_s(args[1])
+                            print("    {0} = {1} << {2}-{3}-{4} >>".format(TopDictOp.to_s(op), args, s0, s1, args[2]))
+                        elif op == TopDictOp.Encoding:
                             # Table 16 Encoding ID
-                            if v[0] == 0:
+                            if args[0] == 0:
                                 s = "Standard Encoding"
-                            elif v[0] == 1:
+                            elif args[0] == 1:
                                 s = "Expert Encoding"
                             else:
                                 s = "unknown Encoding"
-                            print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(k), v, s))
+                            print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(op), args, s))
                         else:
-                            print("    {0} = {1}".format(TopDictOp.to_s(k), v))
+                            print("    {0} = {1}".format(TopDictOp.to_s(op), args))
 
     @staticmethod
     def gen_defaultDict():
@@ -3035,6 +3035,8 @@ class Type2Charstring(object):
                 if b == Type2Op.hstemhm:
                     prev_is_hstem = True
                     stemnum += len(args)/2
+                elif b == Type2Op.endchar:
+                    stemnum = 0
                 self.cmds.append( (b, args) )
                 args = []
             elif 19 <= b <= 20: # operators (hintmask and cntrmask)
@@ -3047,7 +3049,6 @@ class Type2Charstring(object):
                     prev_is_hstem = not prev_is_hstem
                     args = []
                 mask_bytes_num = int(math.ceil(stemnum/8.))
-                stemnum = 0
                 mask, buf = ValUtil.bytespop(buf, mask_bytes_num)
                 self.cmds.append( (b, mask) )
             elif 21 <= b <= 27: # operators
@@ -3066,14 +3067,22 @@ class Type2Charstring(object):
                 v, buf = CffDecorder.decodeInteger(buf, b)
                 args.append(v)
             elif b == 255: # next 4 bytes interpreted as a 32-bit two’s-complement number
-                v, buf = ValUtil.slongpop(buf)
-                args.append(v)
+                # 16-bit signed integer with 16 bits of fraction.
+                v, buf = ValUtil.bytespop(buf, 4)
+                integer = ValUtil.signed(v[0])<<8|v[1]
+                decimal = 1.0*(v[2]<<8|v[3]) / 2**16 # a*(1/2) + b*(1/4) + c*(1/8) + ...
+                fixed_pt_num = integer + decimal
+                args.append(fixed_pt_num)
             else:
                 raise
 
     def show(self):
         for op, args in self.cmds:
-            print "    ", args, "<< {0} >>".format(Type2Op.to_s(op))
+            if op == Type2Op.hintmask or op == Type2Op.cntrmask:
+                bitrep = [ format(v, "08b") for v in args ]
+                print("    {0} << {1} >>".format(bitrep, Type2Op.to_s(op)))
+            else:
+                print("    {0} << {1} >>".format(args, Type2Op.to_s(op)))
 
 # 5176.CFF.pdf  13 Charsets (p.21)
 class CffCharsets(object):
