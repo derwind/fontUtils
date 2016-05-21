@@ -2765,8 +2765,8 @@ class CffTable(Table):
         self.privateDict      = None
         if PARSE_TYPE2CHARSTRING and TopDictOp.Private in cffDict:
             # key:Private, value:Private DICT size and offset, so the offset value is 2nd element
-            offset = cffDict[TopDictOp.Private][1]
-            self.privateDict  = PrivateDict(self.buf_head[offset:])
+            size, offset = cffDict[TopDictOp.Private][0], cffDict[TopDictOp.Private][1]
+            self.privateDict  = PrivateDict(self.buf_head[offset:offset+size])
         # Charsets
         self.charsets         = None
         if PARSE_TYPE2CHARSTRING and TopDictOp.charset in cffDict:
@@ -2861,9 +2861,6 @@ class CffDictData(object):
                     operands = CFFData.delta(operands)
                 self._dict[operator] = operands
                 operands = []
-                # XXX:
-                if b == PrivateDictOp.Subrs:
-                    return
             else:
                 operand, buf = CffDictData._operand(buf)
                 operands.append(operand)
