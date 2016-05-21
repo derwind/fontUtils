@@ -8,6 +8,7 @@ import os, sys, math
 import datetime
 
 PARSE_TYPE2CHARSTRING = True
+DEBUG = False
 
 ################################################################################
 
@@ -3116,9 +3117,16 @@ class CharStringsIndex(CffINDEXData):
     def show(self, stringIndex = None):
         super(CharStringsIndex, self).show()
 
+        svgPen = None
+        if DEBUG:
+            svgPen = SvgPen()
+
         for g in self.glyphs:
             print("    -----")
             g.show()
+            if DEBUG:
+                print("        -*-*-")
+                g.draw(svgPen)
 
 # 5177.Type2.pdf  3.1 Type 2 Charstring Organization (p.10)
 class Type2Charstring(object):
@@ -3200,6 +3208,9 @@ class Type2Charstring(object):
                 print("    {0} << {1} >>".format(bitrep, Type2Op.to_s(op)))
             else:
                 print("    {0} << {1} >>".format(args, Type2Op.to_s(op)))
+
+    def draw(pen):
+        pass
 
 # 5176.CFF.pdf  16 Local/Global Subrs INDEXes (p.25)
 class SubrsIndex(CffINDEXData):
@@ -3540,6 +3551,63 @@ class GlypTable(Table):
     def parse(self, buf):
         super(GlypTable, self).parse(buf)
 
+##################################################
+# Debug
+
+class Pen(object):
+    def __init__(self):
+        pass
+
+    def moveto(self, x, y):
+        raise MyError("MUST implement")
+
+    def closepath(self):
+        raise MyError("MUST implement")
+
+    def lineto(self, x, y):
+        raise MyError("MUST implement")
+
+    def hlineto(self, x):
+        raise MyError("MUST implement")
+
+    def vlineto(self, y):
+        raise MyError("MUST implement")
+
+    def curveto(self, x1, y1, x2, y2, x, y):
+        raise MyError("MUST implement")
+
+class SvgPen(Pen):
+    def __init__(self):
+        super(SvgPen, self).__init__(buf)
+        self.pos = [0, 0]
+        self.path = ""
+
+    def moveto(self, x, y):
+        path = "M {0} {1} ".format(x, y)
+        self.pos = [x, y]
+
+    def closepath(self):
+        path += "Z"
+        print "<path d=\"{0}\" stroke=\"black\" stroke-width=\"1\">".format(self.path)
+        self.path = ""
+
+    def lineto(self, x, y):
+        path += "L {0} {1} ".format(x, y)
+        self.pos = [x, y]
+
+    def hlineto(self, x):
+        path += "H {0} ".format(x)
+        self.pos[0] = x
+
+    def vlineto(self, y):
+        path = "V {0} ".format(y)
+        self.pos[1] = y
+
+    def curveto(self, x1, y1, x2, y2, x, y):
+        path = "C {0} {1} {2} {3} {4} {5} ".format(x1, y1, x2, y2, x, y)
+        self.pos = [x, y]
+
+# Debug
 ##################################################
 
 ## main class of otfparser
