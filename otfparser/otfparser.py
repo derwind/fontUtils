@@ -2743,13 +2743,22 @@ class CffTable(Table):
         self.nameIndex        = NameIndex(buf)
         buf = self.nameIndex.buf
         self.topDictIndex     = TopDictIndex(buf)
+
+        # XXX: currently support only one font, so directly use cffDict[0]
+        cffDict = self.topDictIndex.cffDict[0]
+
         buf = self.topDictIndex.buf
         self.stringIndex      = CffINDEXData(buf, "String")
         buf = self.stringIndex.buf
-        self.globalSubrIndex  = CffINDEXData(buf, "Global Subr")
-        buf = self.globalSubrIndex.buf
-        # XXX: currently support only one font, so directly use cffDict[0]
-        cffDict = self.topDictIndex.cffDict[0]
+        self.globalSubrIndex  = None
+        if PARSE_TYPE2CHARSTRING and TopDictOp.CharStrings in cffDict:
+            charstringType = cffDict[TopDictOp.CharstringType][0]
+            self.globalSubrIndex = SubrsIndex(buf, "Global Subrs", charstringType)
+            #self.globalSubrIndex = CffINDEXData(buf, "Global Subrs")
+
+        self.parse_each_dict(cffDict)
+
+    def parse_each_dict(self, cffDict):
         # Encodings
         self.encodings        = None
         if TopDictOp.Encoding in cffDict:
@@ -2762,11 +2771,18 @@ class CffTable(Table):
             charstringType = cffDict[TopDictOp.CharstringType][0]
             self.charStringsIndex = CharStringsIndex(self.buf_head[offset:], charstringType)
         # Private DICT Data
-        self.privateDict      = None
+        self.privateDict  = None
+        privateDictOffset = -1
         if PARSE_TYPE2CHARSTRING and TopDictOp.Private in cffDict:
             # key:Private, value:Private DICT size and offset, so the offset value is 2nd element
-            size, offset = cffDict[TopDictOp.Private][0], cffDict[TopDictOp.Private][1]
-            self.privateDict  = PrivateDict(self.buf_head[offset:offset+size])
+            size, privateDictOffset = cffDict[TopDictOp.Private][0], cffDict[TopDictOp.Private][1]
+            self.privateDict  = PrivateDict(self.buf_head[privateDictOffset:privateDictOffset+size])
+        # Local Subr INDEX
+        self.localSubrsIndex = None
+        if PARSE_TYPE2CHARSTRING and self.privateDict and PrivateDictOp.Subrs in self.privateDict:
+            subrOffset = self.privateDict[PrivateDictOp.Subrs][0]
+            charstringType = cffDict[TopDictOp.CharstringType][0]
+            self.localSubrsIndex = SubrsIndex(self.buf_head[privateDictOffset+subrOffset:], "Local Subrs", charstringType)
         # Charsets
         self.charsets         = None
         if PARSE_TYPE2CHARSTRING and TopDictOp.charset in cffDict:
@@ -2791,6 +2807,8 @@ class CffTable(Table):
             self.charStringsIndex.show()
         if self.privateDict:
             self.privateDict.show()
+        if self.localSubrsIndex:
+            self.localSubrsIndex.show()
         if self.charsets:
             self.charsets.show(self.stringIndex, self.topDictIndex.isNameKeyed())
         if self.FDSelect:
@@ -3182,6 +3200,28 @@ class Type2Charstring(object):
                 print("    {0} << {1} >>".format(bitrep, Type2Op.to_s(op)))
             else:
                 print("    {0} << {1} >>".format(args, Type2Op.to_s(op)))
+
+# 5176.CFF.pdf  16 Local/Global Subrs INDEXes (p.25)
+class SubrsIndex(CffINDEXData):
+    def __init__(self, buf, name, charstringType):
+        self.charstringType = charstringType
+        self.subrs = []
+        if self.charstringType != 2:
+            raise MyError("currently not support CharstringType which is not 2")
+        super(SubrsIndex, self).__init__(buf, name)
+
+    def parse(self, buf):
+        buf = super(SubrsIndex, self).parse(buf)
+        if self.data:
+            self.subrs = [ Type2Charstring(d) for d in self.data ]
+        return buf
+
+    def show(self):
+        super(SubrsIndex, self).show()
+
+        for subr in self.subrs:
+            print("    -----")
+            subr.show()
 
 # 5176.CFF.pdf  15 Private DICT Data (p.23)
 class PrivateDict(CffDictData):
