@@ -239,7 +239,8 @@ class OTData(object):
         else:
             return ValUtil.ushort(offset) == 0
 
-# 5176.CFF.pdf  Table 2 CFF Data Types
+# 5176.CFF.pdf  Table 2 CFF Data Types (p.9)
+#               Table 6 Operand Types  (p.11)
 class CFFData(object):
     @staticmethod
     def Offset(buf, n):
@@ -258,6 +259,16 @@ class CFFData(object):
     def OffSize(buf):
         return ValUtil.ucharpop(buf)
 
+    @staticmethod
+    def delta(arr):
+        a = []
+        prev = 0
+        for v in arr:
+            v += prev
+            prev = v
+            a.append(v)
+        return a
+
 ## utility of LongDateTime
 class LongDateTime(object):
     @staticmethod
@@ -266,6 +277,7 @@ class LongDateTime(object):
         d += datetime.timedelta(seconds = value) #+ datetime.timedelta(hours = 9)
         return "%u/%02u/%02u %02u:%02u:%02u" % (d.year, d.month, d.day, d.hour, d.minute, d.second)
 
+# Table 9 Top DICT Operator Entries (p.15)
 class TopDictOp(object):
     version            = 0
     Notice             = 1
@@ -372,6 +384,68 @@ class TopDictOp(object):
             return "FDSelect"
         elif op == cls.FontName:
             return "FontName"
+        else:
+            return "unknown"
+
+# Table 23 Private DICT Operators (p.24)
+class PrivateDictOp(object):
+    BlueValues        = 6
+    OtherBlues        = 7
+    FamilyBlues       = 8
+    FamilyOtherBlues  = 9
+    BlueScale         = 12<<8|9
+    BlueShift         = 12<<8|10
+    BlueFuzz          = 12<<8|11
+    StdHW             = 10
+    StdVW             = 11
+    StemSnapH         = 12<<8|12
+    StemSnapV         = 12<<8|13
+    ForceBold         = 12<<8|14
+    LanguageGroup     = 12<<8|17
+    ExpansionFactor   = 12<<8|18
+    initialRandomSeed = 12<<8|19
+    Subrs             = 19
+    defaultWidthX     = 20
+    nominalWidthX     = 21
+
+    @classmethod
+    def to_s(cls, op):
+        if op == cls.BlueValues:
+            return "BlueValues"
+        elif op == cls.OtherBlues:
+            return "OtherBlues"
+        elif op == cls.FamilyBlues:
+            return "FamilyBlues"
+        elif op == cls.FamilyOtherBlues:
+            return "FamilyOtherBlues"
+        elif op == cls.BlueScale:
+            return "BlueScale"
+        elif op == cls.BlueShift:
+            return "BlueShift"
+        elif op == cls.BlueFuzz:
+            return "BlueFuzz"
+        elif op == cls.StdHW:
+            return "StdHW"
+        elif op == cls.StdVW:
+            return "StdVW"
+        elif op == cls.StemSnapH:
+            return "StemSnapH"
+        elif op == cls.StemSnapV:
+            return "StemSnapV"
+        elif op == cls.ForceBold:
+            return "ForceBold"
+        elif op == cls.LanguageGroup:
+            return "LanguageGroup"
+        elif op == cls.ExpansionFactor:
+            return "ExpansionFactor"
+        elif op == cls.initialRandomSeed:
+            return "initialRandomSeed"
+        elif op == cls.Subrs:
+            return "Subrs"
+        elif op == cls.defaultWidthX:
+            return "defaultWidthX"
+        elif op == cls.nominalWidthX:
+            return "nominalWidthX"
         else:
             return "unknown"
 
@@ -2676,20 +2750,33 @@ class CffTable(Table):
         buf = self.globalSubrIndex.buf
         # XXX: currently support only one font, so directly use cffDict[0]
         cffDict = self.topDictIndex.cffDict[0]
+        # Encodings
         self.encodings        = None
         if TopDictOp.Encoding in cffDict:
             offset = cffDict[TopDictOp.Encoding][0]
             self.encodings    = CffEncodings(self.buf_head[offset:])
+        # CharStrings INDEX
         self.charStringsIndex = None
         if PARSE_TYPE2CHARSTRING and TopDictOp.CharStrings in cffDict:
             offset = cffDict[TopDictOp.CharStrings][0]
             charstringType = cffDict[TopDictOp.CharstringType][0]
             self.charStringsIndex = CharStringsIndex(self.buf_head[offset:], charstringType)
+        # Private DICT Data
+        self.privateDict      = None
+        if PARSE_TYPE2CHARSTRING and TopDictOp.Private in cffDict:
+            # key:Private, value:Private DICT size and offset, so the offset value is 2nd element
+            offset = cffDict[TopDictOp.Private][1]
+            self.privateDict  = PrivateDict(self.buf_head[offset:])
+        # Charsets
         self.charsets         = None
         if PARSE_TYPE2CHARSTRING and TopDictOp.charset in cffDict:
             offset = cffDict[TopDictOp.charset][0]
             self.charsets     = CffCharsets(self.buf_head[offset:], self.charStringsIndex.count)
+        # FDSelect
         self.FDSelect         = None
+        if PARSE_TYPE2CHARSTRING and TopDictOp.FDSelect in cffDict:
+            offset = cffDict[TopDictOp.FDSelect][0]
+            self.FDSelect     = CffFDSelect(self.buf_head[offset:], self.charStringsIndex.count)
 
     def show(self):
         print("[Table(%s)]" % (self.tag))
@@ -2702,8 +2789,12 @@ class CffTable(Table):
             self.encodings.show()
         if self.charStringsIndex:
             self.charStringsIndex.show()
+        if self.privateDict:
+            self.privateDict.show()
         if self.charsets:
             self.charsets.show(self.stringIndex, self.topDictIndex.isNameKeyed())
+        if self.FDSelect:
+            self.FDSelect.show()
 
 # 5176.CFF.pdf  6 Header (p.13)
 class CffHeader(object):
@@ -2756,19 +2847,30 @@ class CffDictData(object):
 
     def parse(self, buf):
         operands = []
+        delta_op = [ \
+            TopDictOp.BaseFontBlend, \
+            PrivateDictOp.BlueValues, PrivateDictOp.OtherBlues, PrivateDictOp.FamilyBlues, PrivateDictOp.FamilyOtherBlues,
+            PrivateDictOp.StemSnapH,  PrivateDictOp.StemSnapV
+        ]
         while len(buf) > 0:
             b = ValUtil.uchar(buf)
             if CffDictData._is_operator(b):
                 operator, buf = CffDictData._operator(buf)
                 # self.dict.append( (operator, operands) )
+                if operator in delta_op:
+                    operands = CFFData.delta(operands)
                 self._dict[operator] = operands
                 operands = []
+                # XXX:
+                if b == PrivateDictOp.Subrs:
+                    return
             else:
                 operand, buf = CffDictData._operand(buf)
                 operands.append(operand)
 
     # Appendix H  CFF DICT Encoding (p.59)
     # Table 9 Top DICT Operator Entries (p.15)
+    # Table 23 Private DICT Operators (p.24)
     @staticmethod
     def _is_operator(b):
         if 0 <= b <= 21:
@@ -2776,7 +2878,7 @@ class CffDictData(object):
         elif 28 <= b <= 30 or 32 <= b <= 254:
             return False
         else:
-            raise
+            raise MyError("'%d' is not an operator" % (b))
 
     @staticmethod
     def _operator(buf):
@@ -2890,8 +2992,8 @@ class TopDictIndex(CffINDEXData):
                             s = stringIndex.data[args[0] - StdStr.nStdStr] if args[0] >= StdStr.nStdStr else StdStr.to_s(args[0])
                             print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(op), args, s))
                         elif op == TopDictOp.ROS:
-                            s0 = stringIndex.data[v[0] - StdStr.nStdStr] if args[0] >= StdStr.nStdStr else StdStr.to_s(args[0])
-                            s1 = stringIndex.data[v[1] - StdStr.nStdStr] if args[1] >= StdStr.nStdStr else StdStr.to_s(args[1])
+                            s0 = stringIndex.data[args[0] - StdStr.nStdStr] if args[0] >= StdStr.nStdStr else StdStr.to_s(args[0])
+                            s1 = stringIndex.data[args[1] - StdStr.nStdStr] if args[1] >= StdStr.nStdStr else StdStr.to_s(args[1])
                             print("    {0} = {1} << {2}-{3}-{4} >>".format(TopDictOp.to_s(op), args, s0, s1, args[2]))
                         elif op == TopDictOp.Encoding:
                             # Table 16 Encoding ID
@@ -3084,6 +3186,20 @@ class Type2Charstring(object):
             else:
                 print("    {0} << {1} >>".format(args, Type2Op.to_s(op)))
 
+# 5176.CFF.pdf  15 Private DICT Data (p.23)
+class PrivateDict(CffDictData):
+    def __init__(self, buf):
+        super(PrivateDict, self).__init__(buf)
+
+    def parse(self, buf):
+        buf = super(PrivateDict, self).parse(buf)
+        return buf
+
+    def show(self):
+        print("  [Private]")
+        for op, args in self._dict.items():
+            print("    {0} << {1} >>".format(args, PrivateDictOp.to_s(op)))
+
 # 5176.CFF.pdf  13 Charsets (p.21)
 class CffCharsets(object):
     def __init__(self, buf, nGlyphs):
@@ -3157,6 +3273,7 @@ class CffCharsetsRange2(object):
         self.nLeft, buf = ValUtil.ushortpop(buf)
         return buf
 
+# 5176.CFF.pdf  p.10
 class CffDecorder(object):
     @staticmethod
     def decodeInteger(buf, b0 = None):
@@ -3180,6 +3297,19 @@ class CffDecorder(object):
                     return ValUtil.signed(b1)<<24|b2<<16|b3<<8|b4, buf
                 else:
                     raise
+
+# 5176.CFF.pdf  19 FDSelect (p.28)
+class CffFDSelect(object):
+    def __init__(self, buf, nGlyphs):
+        self.nGlyphs = nGlyphs
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.format, buf = ValUtil.ucharpop(buf)
+
+    def show(self):
+        print("  [FDSelect]")
+        print("    format  = %d" % (self.format))
 
 # CFF
 ##################################################
