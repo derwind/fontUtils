@@ -3211,7 +3211,6 @@ class Type2Charstring(object):
 
     def draw(self, pen):
         pos = [0, 0]
-        drawing = False
         for op, args in self.cmds:
             if op == Type2Op.hintmask or op == Type2Op.cntrmask:
                 pass
@@ -3219,11 +3218,8 @@ class Type2Charstring(object):
                 # consider args of xxxmoveto have the difference from nominalWidthX as the first arg,
                 # see 5177.Type2.pdf  p.11
                 if op == Type2Op.vmoveto:
-                    if drawing:
-                        pen.closepath()
                     pos[1] += args[-1]
                     pen.moveto(pos[0], pos[1])
-                    drawing = True
                 elif op == Type2Op.rlineto:
                     for i in range(len(args)/2):
                         dx, dy = args[2*i], args[2*i+1]
@@ -3264,17 +3260,11 @@ class Type2Charstring(object):
                     pen.closepath()
                     drawing = False
                 elif op == Type2Op.rmoveto:
-                    if drawing:
-                        pen.closepath()
                     pos[0], pos[1] = pos[0] + args[-2], pos[1] + args[-1]
                     pen.moveto(pos[0], pos[1])
-                    drawing = True
                 elif op == Type2Op.hmoveto:
-                    if drawing:
-                        pen.closepath()
                     pos[0] += args[-1]
                     pen.moveto(pos[0], pos[1])
-                    drawing = True
                 elif op == Type2Op.rcurveline:
                     for i in range((len(args)-2)/6):
                         dxa, dya, dxb, dyb, dxc, dyc = args[6*i], args[6*i+1], args[6*i+2], args[6*i+3], args[6*4], args[6*i+5]
@@ -3840,7 +3830,9 @@ class SvgPen(Pen):
         self.path = ""
 
     def moveto(self, x, y):
-        self.path = "M {0} {1} ".format(x, y)
+        if self.path:
+            self.path += "Z "
+        self.path += "M {0} {1} ".format(x, y)
         self.pos = [x, y]
 
     def closepath(self):
