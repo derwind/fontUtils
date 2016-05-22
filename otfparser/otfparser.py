@@ -8,7 +8,7 @@ import os, sys, math
 import datetime
 
 PARSE_TYPE2CHARSTRING = True
-DEBUG = False
+DEBUG = True
 
 ################################################################################
 
@@ -3209,8 +3209,265 @@ class Type2Charstring(object):
             else:
                 print("    {0} << {1} >>".format(args, Type2Op.to_s(op)))
 
-    def draw(pen):
-        pass
+    def draw(self, pen):
+        pos = [0, 0]
+        drawing = False
+        for op, args in self.cmds:
+            if op == Type2Op.hintmask or op == Type2Op.cntrmask:
+                pass
+            else:
+                # consider args of xxxmoveto have the difference from nominalWidthX as the first arg,
+                # see 5177.Type2.pdf  p.11
+                if op == Type2Op.vmoveto:
+                    if drawing:
+                        pen.closepath()
+                    pos[1] += args[-1]
+                    pen.moveto(pos[0], pos[1])
+                    drawing = True
+                elif op == Type2Op.rlineto:
+                    for i in range(len(args)/2):
+                        dx, dy = args[2*i], args[2*i+1]
+                        pos[0], pos[1] = pos[0] + dx, pos[1] + dy
+                        pen.lineto(pos[0], pos[1])
+                elif op == Type2Op.hlineto:
+                    for i, d in enumerate(args):
+                        if i % 2 == 0:
+                            pos[0] += d
+                            pen.hlineto(pos[0])
+                        else:
+                            pos[1] += d
+                            pen.vlineto(pos[1])
+                elif op == Type2Op.vlineto:
+                    for i, d in enumerate(args):
+                        if i % 2 == 0:
+                            pos[1] += d
+                            pen.vlineto(pos[1])
+                        else:
+                            pos[0] += d
+                            pen.hlineto(pos[0])
+                elif op == Type2Op.rrcurveto:
+                    for i in range(len(args)/6):
+                        dxa, dya, dxb, dyb, dxc, dyc = args[6*i], args[6*i+1], args[6*i+2], args[6*i+3], args[6*4], args[6*i+5]
+                        xa = pos[0] + dxa
+                        ya = pos[1] + dya
+                        xb = xa + dxb
+                        yb = ya + dyb
+                        xc = xb + dxc
+                        yc = yb + dyc
+                        pen.curveto(xa, ya, xb, yb, xc, yc)
+                        pos[0], pos[1] = xc, yc
+                elif op == Type2Op.callsubr:
+                    pass
+                elif op == Type2Op._return:
+                    pass
+                elif op == Type2Op.endchar:
+                    pen.closepath()
+                    drawing = False
+                elif op == Type2Op.rmoveto:
+                    if drawing:
+                        pen.closepath()
+                    pos[0], pos[1] = pos[0] + args[-2], pos[1] + args[-1]
+                    pen.moveto(pos[0], pos[1])
+                    drawing = True
+                elif op == Type2Op.hmoveto:
+                    if drawing:
+                        pen.closepath()
+                    pos[0] += args[-1]
+                    pen.moveto(pos[0], pos[1])
+                    drawing = True
+                elif op == Type2Op.rcurveline:
+                    for i in range((len(args)-2)/6):
+                        dxa, dya, dxb, dyb, dxc, dyc = args[6*i], args[6*i+1], args[6*i+2], args[6*i+3], args[6*4], args[6*i+5]
+                        xa = pos[0] + dxa
+                        ya = pos[1] + dya
+                        xb = xa + dxb
+                        yb = ya + dyb
+                        xc = xb + dxc
+                        yc = yb + dyc
+                        pen.curveto(xa, ya, xb, yb, xc, yc)
+                        pos[0], pos[1] = xc, yc
+                    dx, dy = args[-2], args[-1]
+                    pos[0], pos[1] = pos[0] + dx, pos[1] + dy
+                    pen.lineto(pos[0], pos[1])
+                elif op == Type2Op.rlinecurve:
+                    for i in range((len(args)-6)/2):
+                        dx, dy = args[2*i], args[2*i+1]
+                        pos[0], pos[1] = pos[0] + dx, pos[1] + dy
+                        pen.lineto(pos[0], pos[1])
+                    dxa, dya, dxb, dyb, dxc, dyc = args[-6], args[-5], args[-4], args[-3], args[-2], args[-1]
+                    xa = pos[0] + dxa
+                    ya = pos[1] + dya
+                    xb = xa + dxb
+                    yb = ya + dyb
+                    xc = xb + dxc
+                    yc = yb + dyc
+                    pen.curveto(xa, ya, xb, yb, xc, yc)
+                    pos[0], pos[1] = xc, yc
+                elif op == Type2Op.vvcurveto:
+                    dx1 = 0
+                    if len(args)/4 != 0:
+                        dx1 = args.pop(0)
+                    for i in range(len(args)/4):
+                        dxa, dya, dxb, dyb, dxc, dyc = 0, args[4*i], args[4*i+1], args[4*i+2], 0, args[4*i+3]
+                        xa = pos[0] + dxa + dx1; dx1 = 0
+                        ya = pos[1] + dya
+                        xb = xa + dxb
+                        yb = ya + dyb
+                        xc = xb + dxc
+                        yc = yb + dyc
+                        pen.curveto(xa, ya, xb, yb, xc, yc)
+                        pos[0], pos[1] = xc, yc
+                elif op == Type2Op.hhcurveto:
+                    dy1 = 0
+                    if len(args)/4 != 0:
+                        dy1 = args.pop(0)
+                    for i in range(len(args)/4):
+                        dxa, dya, dxb, dyb, dxc, dyc = args[4*i], 0, args[4*i+1], args[4*i+2], args[4*i+3], 0
+                        xa = pos[0] + dxa
+                        ya = pos[1] + dya + dy1; dy1 = 0
+                        xb = xa + dxb
+                        yb = ya + dyb
+                        xc = xb + dxc
+                        yc = yb + dyc
+                        pen.curveto(xa, ya, xb, yb, xc, yc)
+                        pos[0], pos[1] = xc, yc
+                elif op == Type2Op.vhcurveto:
+                    if len(args)%8 >= 4:
+                        # 1, 3, 5, ... curves, i.e. odd number of curves
+                        dy1 = args.pop(0)
+                        dx2 = args.pop(0)
+                        dy2 = args.pop(0)
+                        dx3 = args.pop(0)
+                        x1 = pos[0]
+                        y1 = pos[1] + dy1
+                        x2 = x1 + dx2
+                        y2 = y1 + dy2
+                        x3 = x2 + dx3
+                        y3 = y2
+                        pen.curveto(x1, y1, x2, y2, x3, y3)
+                        pos[0], pos[1] = x3, y3
+
+                        dyfinal = 0
+                        if len(args)/8 != 0:
+                            dyfinal = args.pop()
+
+                        for i in range(len(args)/8):
+                            dxa,dya,dxb,dyb,dxc,dyc = args[8*i],0,   args[8*i+1],args[8*i+2], 0,args[8*i+3]
+                            dxd,dyd,dxe,dye,dxf,dyf = 0,args[8*i+4], args[8*i+5],args[8*i+6], args[8*i+7],0
+                            xa = pos[0] + dxa
+                            ya = pos[1] + dya
+                            xb = xa + dxb
+                            yb = ya + dyb
+                            xc = xb + dxc
+                            yc = yb + dyc
+                            xd = xc + dxd
+                            yd = yc + dyd
+                            xe = xd + dxe
+                            ye = yd + dye
+                            xf = xe + dxf
+                            yf = ye + dyf
+                            if i >= len(args)/8 - 1:
+                                yf += dyfinal
+
+                            pen.curveto(xa, ya, xb, yb, xc, yc)
+                            pen.curveto(xd, yd, xe, ye, xf, yf)
+                            pos[0], pos[1] = xf, yf
+                    else:
+                        # 2, 4, 6, ... curves, i.e. even number of curves
+                        dxfinal = 0
+                        if len(args)/8 != 0:
+                            dxfinal = args.pop()
+
+                        for i in range(len(args)/8):
+                            dxa,dya,dxb,dyb,dxc,dyc = 0,args[8*i],   args[8*i+1],args[8*i+2], args[8*i+3],0
+                            dxd,dyd,dxe,dye,dxf,dyf = args[8*i+4],0, args[8*i+5],args[8*i+6], 0,args[8*i+7]
+                            xa = pos[0] + dxa
+                            ya = pos[1] + dya
+                            xb = xa + dxb
+                            yb = ya + dyb
+                            xc = xb + dxc
+                            yc = yb + dyc
+                            xd = xc + dxd
+                            yd = yc + dyd
+                            xe = xd + dxe
+                            ye = yd + dye
+                            xf = xe + dxf
+                            yf = ye + dyf
+                            if i >= len(args)/8 - 1:
+                                xf += dxfinal
+
+                            pen.curveto(xa, ya, xb, yb, xc, yc)
+                            pen.curveto(xd, yd, xe, ye, xf, yf)
+                            pos[0], pos[1] = xf, yf
+
+                elif op == Type2Op.hvcurveto:
+                    if len(args)%8 >= 4:
+                        # 1, 3, 5, ... curves, i.e. odd number of curves
+                        dx1 = args.pop(0)
+                        dx2 = args.pop(0)
+                        dy2 = args.pop(0)
+                        dy3 = args.pop(0)
+                        x1 = pos[0] + dx1
+                        y1 = pos[1]
+                        x2 = x1 + dx2
+                        y2 = y1 + dy2
+                        x3 = x2
+                        y3 = y2 + dy3
+                        pen.curveto(x1, y1, x2, y2, x3, y3)
+                        pos[0], pos[1] = x3, y3
+
+                        dxfinal = 0
+                        if len(args)/8 != 0:
+                            dxfinal = args.pop()
+
+                        for i in range(len(args)/8):
+                            dxa,dya,dxb,dyb,dxc,dyc = 0,args[8*i],   args[8*i+1],args[8*i+2], args[8*i+3],0
+                            dxd,dyd,dxe,dye,dxf,dyf = args[8*i+4],0, args[8*i+5],args[8*i+6], 0,args[8*i+7]
+                            xa = pos[0] + dxa
+                            ya = pos[1] + dya
+                            xb = xa + dxb
+                            yb = ya + dyb
+                            xc = xb + dxc
+                            yc = yb + dyc
+                            xd = xc + dxd
+                            yd = yc + dyd
+                            xe = xd + dxe
+                            ye = yd + dye
+                            xf = xe + dxf
+                            yf = ye + dyf
+                            if i >= len(args)/8 - 1:
+                                xf += dxfinal
+
+                            pen.curveto(xa, ya, xb, yb, xc, yc)
+                            pen.curveto(xd, yd, xe, ye, xf, yf)
+                            pos[0], pos[1] = xf, yf
+                    else:
+                        # 2, 4, 6, ... curves, i.e. even number of curves
+                        dyfinal = 0
+                        if len(args)/8 != 0:
+                            dyfinal = args.pop()
+
+                        for i in range(len(args)/8):
+                            dxa,dya,dxb,dyb,dxc,dyc = args[8*i],0,   args[8*i+1],args[8*i+2], 0,args[8*i+3]
+                            dxd,dyd,dxe,dye,dxf,dyf = 0,args[8*i+4], args[8*i+5],args[8*i+6], args[8*i+7],0
+                            xa = pos[0] + dxa
+                            ya = pos[1] + dya
+                            xb = xa + dxb
+                            yb = ya + dyb
+                            xc = xb + dxc
+                            yc = yb + dyc
+                            xd = xc + dxd
+                            yd = yc + dyd
+                            xe = xd + dxe
+                            ye = yd + dye
+                            xf = xe + dxf
+                            yf = ye + dyf
+                            if i >= len(args)/8 - 1:
+                                yf += dyfinal
+
+                            pen.curveto(xa, ya, xb, yb, xc, yc)
+                            pen.curveto(xd, yd, xe, ye, xf, yf)
+                            pos[0], pos[1] = xf, yf
 
 # 5176.CFF.pdf  16 Local/Global Subrs INDEXes (p.25)
 class SubrsIndex(CffINDEXData):
@@ -3578,33 +3835,33 @@ class Pen(object):
 
 class SvgPen(Pen):
     def __init__(self):
-        super(SvgPen, self).__init__(buf)
+        super(SvgPen, self).__init__()
         self.pos = [0, 0]
         self.path = ""
 
     def moveto(self, x, y):
-        path = "M {0} {1} ".format(x, y)
+        self.path = "M {0} {1} ".format(x, y)
         self.pos = [x, y]
 
     def closepath(self):
-        path += "Z"
+        self.path += "Z"
         print "<path d=\"{0}\" stroke=\"black\" stroke-width=\"1\">".format(self.path)
         self.path = ""
 
     def lineto(self, x, y):
-        path += "L {0} {1} ".format(x, y)
+        self.path += "L {0} {1} ".format(x, y)
         self.pos = [x, y]
 
     def hlineto(self, x):
-        path += "H {0} ".format(x)
+        self.path += "H {0} ".format(x)
         self.pos[0] = x
 
     def vlineto(self, y):
-        path = "V {0} ".format(y)
+        self.path += "V {0} ".format(y)
         self.pos[1] = y
 
     def curveto(self, x1, y1, x2, y2, x, y):
-        path = "C {0} {1} {2} {3} {4} {5} ".format(x1, y1, x2, y2, x, y)
+        self.path += "C {0} {1} {2} {3} {4} {5} ".format(x1, y1, x2, y2, x, y)
         self.pos = [x, y]
 
 # Debug
