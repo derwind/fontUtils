@@ -8,7 +8,7 @@ import os, sys, math
 import datetime
 
 PARSE_TYPE2CHARSTRING = True
-DEBUG = True
+DEBUG = False
 
 ################################################################################
 
@@ -3328,18 +3328,20 @@ class Type2Charstring(object):
                         dx2 = args.pop(0)
                         dy2 = args.pop(0)
                         dx3 = args.pop(0)
+                        dyfinal = 0
+                        if len(args)%8 != 0:
+                            dyfinal = args.pop()
+
                         x1 = pos[0]
                         y1 = pos[1] + dy1
                         x2 = x1 + dx2
                         y2 = y1 + dy2
                         x3 = x2 + dx3
                         y3 = y2
+                        if len(args) == 0:
+                            y3 += dyfinal
                         pen.curveto(x1, y1, x2, y2, x3, y3)
                         pos[0], pos[1] = x3, y3
-
-                        dyfinal = 0
-                        if len(args)/8 != 0:
-                            dyfinal = args.pop()
 
                         for i in range(len(args)/8):
                             dxa,dya,dxb,dyb,dxc,dyc = args[8*i],0,   args[8*i+1],args[8*i+2], 0,args[8*i+3]
@@ -3365,7 +3367,7 @@ class Type2Charstring(object):
                     else:
                         # 2, 4, 6, ... curves, i.e. even number of curves
                         dxfinal = 0
-                        if len(args)/8 != 0:
+                        if len(args)%8 != 0:
                             dxfinal = args.pop()
 
                         for i in range(len(args)/8):
@@ -3397,18 +3399,20 @@ class Type2Charstring(object):
                         dx2 = args.pop(0)
                         dy2 = args.pop(0)
                         dy3 = args.pop(0)
+                        dxfinal = 0
+                        if len(args)%8 != 0:
+                            dxfinal = args.pop()
+
                         x1 = pos[0] + dx1
                         y1 = pos[1]
                         x2 = x1 + dx2
                         y2 = y1 + dy2
                         x3 = x2
                         y3 = y2 + dy3
+                        if len(args) == 0:
+                            x3 += dxfinal
                         pen.curveto(x1, y1, x2, y2, x3, y3)
                         pos[0], pos[1] = x3, y3
-
-                        dxfinal = 0
-                        if len(args)/8 != 0:
-                            dxfinal = args.pop()
 
                         for i in range(len(args)/8):
                             dxa,dya,dxb,dyb,dxc,dyc = 0,args[8*i],   args[8*i+1],args[8*i+2], args[8*i+3],0
@@ -3434,7 +3438,7 @@ class Type2Charstring(object):
                     else:
                         # 2, 4, 6, ... curves, i.e. even number of curves
                         dyfinal = 0
-                        if len(args)/8 != 0:
+                        if len(args)%8 != 0:
                             dyfinal = args.pop()
 
                         for i in range(len(args)/8):
