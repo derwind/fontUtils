@@ -2751,6 +2751,12 @@ class CffTable(Table):
         buf = self.topDictIndex.buf
         self.stringIndex      = CffINDEXData(buf, "String")
         buf = self.stringIndex.buf
+
+        self.fontDictIndex  = None
+        if TopDictOp.FDArray in cffDict:
+            offset = cffDict[TopDictOp.FDArray][0]
+            self.fontDictIndex = FontDictIndex(self.buf_head[offset:])
+
         self.globalSubrIndex  = None
         if PARSE_TYPE2CHARSTRING and TopDictOp.CharStrings in cffDict:
             charstringType = cffDict[TopDictOp.CharstringType][0]
@@ -2800,6 +2806,8 @@ class CffTable(Table):
         self.header.show()
         self.nameIndex.show()
         self.topDictIndex.show(self.stringIndex)
+        if self.fontDictIndex:
+            self.fontDictIndex.show()
         self.stringIndex.show()
         self.globalSubrIndex.show()
         if self.encodings:
@@ -2982,7 +2990,7 @@ class NameIndex(CffINDEXData):
 class TopDictIndex(CffINDEXData):
     def __init__(self, buf):
         self.cffDict = []
-        super(TopDictIndex, self).__init__(buf, "Top DICT")
+        super(TopDictIndex, self).__init__(buf, "Top DICT INDEX")
 
     def isNameKeyed(self):
         return not TopDictOp.ROS in self.cffDict[0]
@@ -3620,6 +3628,25 @@ class CffFDSelect(object):
     def show(self):
         print("  [FDSelect]")
         print("    format  = %d" % (self.format))
+
+class FontDictIndex(CffINDEXData):
+    def __init__(self, buf):
+        self.fontDict = []
+        super(FontDictIndex, self).__init__(buf, "Font DICT INDEX")
+
+    def parse(self, buf):
+        buf = super(FontDictIndex, self).parse(buf)
+        self.fontDict = [CffDictData(data) for data in self.data]
+        return buf
+
+    def show(self, stringIndex = None):
+        super(FontDictIndex, self).show()
+
+        if self.count != 0:
+            for fontDict in self.fontDict:
+                print("    -----")
+                for op, args in fontDict.items():
+                    print("    {0} = {1}".format(TopDictOp.to_s(op), args))
 
 # CFF
 ##################################################
