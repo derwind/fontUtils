@@ -2752,10 +2752,22 @@ class CffTable(Table):
         self.stringIndex      = CffINDEXData(buf, "String")
         buf = self.stringIndex.buf
 
+        # XXX
+        self.privateDict  = None
+
         self.fontDictIndex  = None
         if TopDictOp.FDArray in cffDict:
             offset = cffDict[TopDictOp.FDArray][0]
             self.fontDictIndex = FontDictIndex(self.buf_head[offset:])
+
+            # XXX
+            fontDict = self.fontDictIndex.fontDict[0]
+
+            privateDictOffset = -1
+            if PARSE_TYPE2CHARSTRING and TopDictOp.Private in fontDict:
+                # key:Private, value:Private DICT size and offset, so the offset value is 2nd element
+                size, privateDictOffset = fontDict[TopDictOp.Private][0], fontDict[TopDictOp.Private][1]
+                self.privateDict  = PrivateDict(self.buf_head[privateDictOffset:privateDictOffset+size])
 
         self.globalSubrIndex  = None
         if PARSE_TYPE2CHARSTRING and TopDictOp.CharStrings in cffDict:
@@ -2778,7 +2790,7 @@ class CffTable(Table):
             charstringType = cffDict[TopDictOp.CharstringType][0]
             self.charStringsIndex = CharStringsIndex(self.buf_head[offset:], charstringType)
         # Private DICT Data
-        self.privateDict  = None
+        #self.privateDict  = None
         privateDictOffset = -1
         if PARSE_TYPE2CHARSTRING and TopDictOp.Private in cffDict:
             # key:Private, value:Private DICT size and offset, so the offset value is 2nd element
@@ -2807,21 +2819,21 @@ class CffTable(Table):
         self.nameIndex.show()
         self.topDictIndex.show(self.stringIndex)
         if self.fontDictIndex:
-            self.fontDictIndex.show()
-        self.stringIndex.show()
-        self.globalSubrIndex.show()
-        if self.encodings:
-            self.encodings.show()
-        if self.charStringsIndex:
-            self.charStringsIndex.show()
+            self.fontDictIndex.show(self.stringIndex)
         if self.privateDict:
             self.privateDict.show()
-        if self.localSubrsIndex:
-            self.localSubrsIndex.show()
+        self.stringIndex.show()
+        if self.encodings:
+            self.encodings.show()
         if self.charsets:
             self.charsets.show(self.stringIndex, self.topDictIndex.isNameKeyed())
         if self.FDSelect:
             self.FDSelect.show()
+        if self.charStringsIndex:
+            self.charStringsIndex.show()
+        if self.localSubrsIndex:
+            self.localSubrsIndex.show()
+        self.globalSubrIndex.show()
 
 # 5176.CFF.pdf  6 Header (p.13)
 class CffHeader(object):
@@ -3646,7 +3658,14 @@ class FontDictIndex(CffINDEXData):
             for fontDict in self.fontDict:
                 print("    -----")
                 for op, args in fontDict.items():
-                    print("    {0} = {1}".format(TopDictOp.to_s(op), args))
+                    if stringIndex is None:
+                        print("    {0} = {1}".format(TopDictOp.to_s(op), args))
+                    else:
+                        if op == TopDictOp.FontName:
+                            s = stringIndex.data[args[0] - StdStr.nStdStr] if args[0] >= StdStr.nStdStr else StdStr.to_s(args[0])
+                            print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(op), args, s))
+                        else:
+                            print("    {0} = {1}".format(TopDictOp.to_s(op), args))
 
 # CFF
 ##################################################
