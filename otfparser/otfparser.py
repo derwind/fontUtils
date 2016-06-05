@@ -3650,11 +3650,79 @@ class CffFDSelect(object):
         self.buf = self.parse(buf)
 
     def parse(self, buf):
-        self.format, buf = ValUtil.ucharpop(buf)
+        format = ValUtil.uchar(buf)
+        if format == 0:
+            self.select = FDSelect0(buf, self.nGlyphs)
+        elif format == 3:
+            self.select = FDSelect3(buf)
+        else:
+            self.select = FDSelectDummy(buf)
 
     def show(self):
-        print("  [FDSelect]")
-        print("    format  = %d" % (self.format))
+        self.select.show()
+
+class FDSelectDummy(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.format, buf = ValUtil.ucharpop(buf)
+
+        return buf
+
+    def show(self):
+        print("  [FDSelect%d]" % (self.format))
+        print("    format = %d" % (self.format))
+
+class FDSelect0(object):
+    def __init__(self, buf, nGlyphs):
+        self.nGlyphs = nGlyphs
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.format, buf = ValUtil.ucharpop(buf)
+        self.fds, buf    = ValUtil.bytespop(buf, self.nGlyphs)
+
+        return buf
+
+    def show(self):
+        print("  [FDSelect0]")
+        print("    format   = %d" % (self.format))
+        print("    fds      = {0}".format(self.fds))
+
+class FDSelect3(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.format, buf  = ValUtil.ucharpop(buf)
+        self.nRanges, buf = ValUtil.ushortpop(buf)
+
+        self.Range3 = []
+        for i in range(self.nRanges):
+            ran3 = CffFontSelectRange3(buf)
+            self.Range3.append(ran3)
+            buf = ran3.buf
+
+        self.sentinel, buf = ValUtil.ushortpop(buf)
+
+        return buf
+
+    def show(self):
+        print("  [FDSelect3]")
+        print("    format   = %d" % (self.format))
+        print("    nRanges  = %d" % (self.nRanges))
+        print("    Range3   = {0}".format([(r.first, r.fd) for r in self.Range3]))
+        print("    sentinel = %d" % (self.sentinel))
+
+class CffFontSelectRange3(object):
+    def __init__(self, buf):
+        self.buf = self.parse(buf)
+
+    def parse(self, buf):
+        self.first, buf = ValUtil.ushortpop(buf)
+        self.fd, buf    = ValUtil.ucharpop(buf)
+        return buf
 
 class FontDictIndex(CffINDEXData):
     def __init__(self, buf):
