@@ -3520,7 +3520,7 @@ class SubrsIndex(CffINDEXData):
 # 5176.CFF.pdf  15 Private DICT Data (p.23)
 class PrivateDict(CffDictData):
     def __init__(self, buf):
-        super(PrivateDict, self).__init__(buf)
+        super(PrivateDict, self).__init__(buf, PrivateDict.gen_defaultDict())
 
     def parse(self, buf):
         buf = super(PrivateDict, self).parse(buf)
@@ -3530,6 +3530,20 @@ class PrivateDict(CffDictData):
         print(indent + "  [Private]")
         for op, args in self._dict.items():
             print(indent + "    {0} << {1} >>".format(args, PrivateDictOp.to_s(op)))
+
+    @staticmethod
+    def gen_defaultDict():
+        return {
+            PrivateDictOp.BlueScale:         [0.039625],
+            PrivateDictOp.BlueShift:         [7],
+            PrivateDictOp.BlueFuzz:          [1],
+            PrivateDictOp.ForceBold:         [False],
+            PrivateDictOp.LanguageGroup:     [0],
+            PrivateDictOp.ExpansionFactor:   [0.06],
+            PrivateDictOp.initialRandomSeed: [0],
+            PrivateDictOp.defaultWidthX:     [0],
+            PrivateDictOp.nominalWidthX:     [0]
+        }
 
 # 5176.CFF.pdf  13 Charsets (p.21)
 class CffCharsets(object):
