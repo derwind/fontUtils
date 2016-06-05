@@ -6,6 +6,7 @@
 import os, sys, math
 #import struct
 import datetime
+import copy
 
 PARSE_TYPE2CHARSTRING = True
 DEBUG = False
@@ -2752,22 +2753,17 @@ class CffTable(Table):
         self.stringIndex      = CffINDEXData(buf, "String")
         buf = self.stringIndex.buf
 
-        # XXX
-        self.privateDict  = None
-
         self.fontDictIndex  = None
+        self.fdArray        = []
         if TopDictOp.FDArray in cffDict:
             offset = cffDict[TopDictOp.FDArray][0]
             self.fontDictIndex = FontDictIndex(self.buf_head[offset:])
-
-            # XXX
-            fontDict = self.fontDictIndex.fontDict[0]
-
-            privateDictOffset = -1
-            if PARSE_TYPE2CHARSTRING and TopDictOp.Private in fontDict:
-                # key:Private, value:Private DICT size and offset, so the offset value is 2nd element
-                size, privateDictOffset = fontDict[TopDictOp.Private][0], fontDict[TopDictOp.Private][1]
-                self.privateDict  = PrivateDict(self.buf_head[privateDictOffset:privateDictOffset+size])
+            for fontDict in self.fontDictIndex.fontDict:
+                privateDictOffset = -1
+                if PARSE_TYPE2CHARSTRING and TopDictOp.Private in fontDict:
+                    # key:Private, value:Private DICT size and offset, so the offset value is 2nd element
+                    size, privateDictOffset = fontDict[TopDictOp.Private][0], fontDict[TopDictOp.Private][1]
+                    self.fdArray.append( PrivateDict(self.buf_head[privateDictOffset:privateDictOffset+size]) )
 
         self.globalSubrIndex  = None
         if PARSE_TYPE2CHARSTRING and TopDictOp.CharStrings in cffDict:
@@ -2790,7 +2786,7 @@ class CffTable(Table):
             charstringType = cffDict[TopDictOp.CharstringType][0]
             self.charStringsIndex = CharStringsIndex(self.buf_head[offset:], charstringType)
         # Private DICT Data
-        #self.privateDict  = None
+        self.privateDict  = None
         privateDictOffset = -1
         if PARSE_TYPE2CHARSTRING and TopDictOp.Private in cffDict:
             # key:Private, value:Private DICT size and offset, so the offset value is 2nd element
@@ -2820,6 +2816,9 @@ class CffTable(Table):
         self.topDictIndex.show(self.stringIndex)
         if self.fontDictIndex:
             self.fontDictIndex.show(self.stringIndex)
+        if self.fdArray:
+            for pd in self.fdArray:
+                pd.show("  ")
         if self.privateDict:
             self.privateDict.show()
         self.stringIndex.show()
@@ -2861,7 +2860,8 @@ class CffHeader(object):
 # [operand(s); variable-size; integer or real values][operator; 1- or 2-byte]
 class CffDictData(object):
     def __init__(self, buf, defaultDict = {}):
-        self._dict = defaultDict
+        # use deep copy to prevent destructive actions on defaultDict itself
+        self._dict = copy.deepcopy(defaultDict)
         self.buf  = self.parse(buf)
 
     # like a dict
@@ -3018,19 +3018,20 @@ class TopDictIndex(CffINDEXData):
         if self.count != 0:
             for cffDict in self.cffDict:
                 print("    -----")
+                print("    [Top DICT]")
                 for op, args in cffDict.items():
                     if stringIndex is None:
-                        print("    {0} = {1}".format(TopDictOp.to_s(op), args))
+                        print("      {0} = {1}".format(TopDictOp.to_s(op), args))
                     else:
                         if op == TopDictOp.version or op == TopDictOp.Notice or op == TopDictOp.Copyright \
                            or op == TopDictOp.FullName or op == TopDictOp.FamilyName or op == TopDictOp.Weight \
                            or op == TopDictOp.PostScript or op == TopDictOp.BaseFontName or op == TopDictOp.FontName:
                             s = stringIndex.data[args[0] - StdStr.nStdStr] if args[0] >= StdStr.nStdStr else StdStr.to_s(args[0])
-                            print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(op), args, s))
+                            print("      {0} = {1} << {2} >>".format(TopDictOp.to_s(op), args, s))
                         elif op == TopDictOp.ROS:
                             s0 = stringIndex.data[args[0] - StdStr.nStdStr] if args[0] >= StdStr.nStdStr else StdStr.to_s(args[0])
                             s1 = stringIndex.data[args[1] - StdStr.nStdStr] if args[1] >= StdStr.nStdStr else StdStr.to_s(args[1])
-                            print("    {0} = {1} << {2}-{3}-{4} >>".format(TopDictOp.to_s(op), args, s0, s1, args[2]))
+                            print("      {0} = {1} << {2}-{3}-{4} >>".format(TopDictOp.to_s(op), args, s0, s1, args[2]))
                         elif op == TopDictOp.Encoding:
                             # Table 16 Encoding ID
                             if args[0] == 0:
@@ -3039,9 +3040,9 @@ class TopDictIndex(CffINDEXData):
                                 s = "Expert Encoding"
                             else:
                                 s = "unknown Encoding"
-                            print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(op), args, s))
+                            print("      {0} = {1} << {2} >>".format(TopDictOp.to_s(op), args, s))
                         else:
-                            print("    {0} = {1}".format(TopDictOp.to_s(op), args))
+                            print("      {0} = {1}".format(TopDictOp.to_s(op), args))
 
     @staticmethod
     def gen_defaultDict():
@@ -3525,10 +3526,10 @@ class PrivateDict(CffDictData):
         buf = super(PrivateDict, self).parse(buf)
         return buf
 
-    def show(self):
-        print("  [Private]")
+    def show(self, indent = ""):
+        print(indent + "  [Private]")
         for op, args in self._dict.items():
-            print("    {0} << {1} >>".format(args, PrivateDictOp.to_s(op)))
+            print(indent + "    {0} << {1} >>".format(args, PrivateDictOp.to_s(op)))
 
 # 5176.CFF.pdf  13 Charsets (p.21)
 class CffCharsets(object):
@@ -3657,15 +3658,16 @@ class FontDictIndex(CffINDEXData):
         if self.count != 0:
             for fontDict in self.fontDict:
                 print("    -----")
+                print("    [Font DICT]")
                 for op, args in fontDict.items():
                     if stringIndex is None:
-                        print("    {0} = {1}".format(TopDictOp.to_s(op), args))
+                        print("      {0} = {1}".format(TopDictOp.to_s(op), args))
                     else:
                         if op == TopDictOp.FontName:
                             s = stringIndex.data[args[0] - StdStr.nStdStr] if args[0] >= StdStr.nStdStr else StdStr.to_s(args[0])
-                            print("    {0} = {1} << {2} >>".format(TopDictOp.to_s(op), args, s))
+                            print("      {0} = {1} << {2} >>".format(TopDictOp.to_s(op), args, s))
                         else:
-                            print("    {0} = {1}".format(TopDictOp.to_s(op), args))
+                            print("      {0} = {1}".format(TopDictOp.to_s(op), args))
 
 # CFF
 ##################################################
