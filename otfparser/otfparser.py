@@ -3985,7 +3985,7 @@ class SvgPen(Pen):
 
     def term(self):
         self.path = self.path.rstrip()
-        print "<path d=\"{0}\" stroke=\"black\" stroke-width=\"1\">".format(self.path)
+        print("<path d=\"{0}\" stroke=\"black\" stroke-width=\"1\">".format(self.path))
         self.path = ""
 
     def moveto(self, x, y):
@@ -4018,25 +4018,25 @@ class PsPen(Pen):
         self.pos = [0, 0]
 
     def init(self):
-        print "% color -> black"
-        print "0 setgray"
-        print
+        print("% color -> black")
+        print("0 setgray")
+        print("")
 
     def term(self):
-        print "fill"
-        print
-        print "showpage"
+        print("fill")
+        print("")
+        print("showpage")
 
     def moveto(self, x, y):
-        print "{0} {1} moveto".format(x, y)
+        print("{0} {1} moveto".format(x, y))
         self.pos = [x, y]
 
     def closepath(self):
-        print "closepath"
-        print
+        print("closepath")
+        print("")
 
     def lineto(self, x, y):
-        print "{0} {1} lineto".format(x, y)
+        print("{0} {1} lineto".format(x, y))
         self.pos = [x, y]
 
     def hlineto(self, x):
@@ -4046,7 +4046,7 @@ class PsPen(Pen):
         self.lineto(self.pos[0], y)
 
     def curveto(self, x1, y1, x2, y2, x, y):
-        print "{0} {1} {2} {3} {4} {5} curveto".format(x1, y1, x2, y2, x, y)
+        print("{0} {1} {2} {3} {4} {5} curveto".format(x1, y1, x2, y2, x, y))
         self.pos = [x, y]
 
 # Debug
