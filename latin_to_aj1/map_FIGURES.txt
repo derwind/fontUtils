@@ -1,0 +1,11 @@
+mergeFonts SourceSansTest-Regular-FIGURES
+00017 zero
+00018 one
+00019 two
+00020 three
+00021 four
+00022 five
+00023 six
+00024 seven
+00025 eight
+00026 nine
