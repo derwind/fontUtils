@@ -63,15 +63,14 @@ class GposRenderer(Renderer):
         self._render_lookup(lookup)
 
     def _render_lookup(self, lookup):
-        print "LookupType: {}".format(lookup.LookupType)
-        print "LookupFlag: {}".format(lookup.LookupFlag)
+        print "LookupType: {}, LookupFlag: {}".format(lookup.LookupType, lookup.LookupFlag)
         for subtable in lookup.SubTable:
             if subtable.LookupType == GposLookupType.SINGLE:
                 self._render_single(subtable)
             elif subtable.LookupType == GposLookupType.EXTENSION_POSITIONING:
                 extSubTable = subtable.ExtSubTable
                 if extSubTable.LookupType == GposLookupType.SINGLE:
-                    self._render_single(ExtSubTable)
+                    self._render_single(extSubTable)
                 else:
                     pass
 
