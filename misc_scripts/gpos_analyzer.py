@@ -81,7 +81,8 @@ class GposRenderer(Renderer):
             for gname, val in zip(coverage.glyphs, subtable.Value):
                 self._render_ValueRecord(gname, val) 
         elif type(subtable.Value) == ValueRecord:
-            self._render_ValueRecord(coverage.glyphs[0], subtable.Value)
+            for gname in coverage.glyphs:
+                self._render_ValueRecord(gname, subtable.Value)
         else:
             #print "???", type(subtable.Value)
             pass
