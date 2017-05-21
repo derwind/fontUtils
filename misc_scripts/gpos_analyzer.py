@@ -71,6 +71,8 @@ class GposRenderer(Renderer):
                 extSubTable = subtable.ExtSubTable
                 if extSubTable.LookupType == GposLookupType.SINGLE:
                     self._render_single(extSubTable)
+                elif extSubTable.LookupType == GposLookupType.PAIR:
+                    self._render_pair(extSubTable)
                 else:
                     pass
 
@@ -86,6 +88,31 @@ class GposRenderer(Renderer):
             #print "???", type(subtable.Value)
             pass
 
+    def _render_pair(self, subtable):
+        # 'Class1Count', 'Class1Record', 'Class2Count', 'ClassDef1', 'ClassDef2', 'Coverage'
+        # 'PairSet', 'PairSetCount'
+
+        coverage = subtable.Coverage
+        #print dir(subtable)
+        for FirstGlyph, pair in zip(coverage.glyphs, subtable.PairSet):
+            for record in pair.PairValueRecord:
+                SecondGlyph = record.SecondGlyph
+                Value1 = record.Value1
+                Value2 = record.Value2
+                self._render_ValueRecord2(FirstGlyph, SecondGlyph, Value1)
+
+        """
+        if type(subtable.Value) == list:
+            for gname, val in zip(coverage.glyphs, subtable.Value):
+                self._render_ValueRecord(gname, val)
+        elif type(subtable.Value) == ValueRecord:
+            for gname in coverage.glyphs:
+                self._render_ValueRecord(gname, subtable.Value)
+        else:
+            #print "???", type(subtable.Value)
+            pass
+        """
+
     def _render_ValueRecord(self, glyph_name, record):
         xplc = 0
         yplc = 0
@@ -100,6 +127,21 @@ class GposRenderer(Renderer):
         if hasattr(record, "YAdvance"):
             yadv = record.YAdvance
         print "  pos {} <{} {} {} {}>;".format(glyph_name, xplc, yplc, xadv, yadv)
+
+    def _render_ValueRecord2(self, glyph_name1, glyph_name2, record):
+        xplc = 0
+        yplc = 0
+        xadv = 0
+        yadv = 0
+        if hasattr(record, "XPlacement"):
+            xplc = record.XPlacement
+        if hasattr(record, "YPlacement"):
+            yplc = record.YPlacement
+        if hasattr(record, "XAdvance"):
+            xadv = record.XAdvance
+        if hasattr(record, "YAdvance"):
+            yadv = record.YAdvance
+        print "  pos {} {} <{} {} {} {}>;".format(glyph_name1, glyph_name2, xplc, yplc, xadv, yadv)
 
 ################################################################################
 
