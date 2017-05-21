@@ -2,8 +2,18 @@
 # -*- coding: utf-8 -*-
 
 import sys
+from abc import ABCMeta, abstractmethod
 from fontTools.ttLib import TTFont
 
+class Renderer(object):
+    __metaclass__=ABCMeta
+
+    @abstractmethod
+    def render(self, lookup):
+        pass
+
+# https://www.microsoft.com/typography/otspec/gsub.htm
+# LookupType Enumeration table for glyph substitution
 class GsubLookupType(object):
     SINGLE = 1
     MULTIPLE = 2
@@ -28,10 +38,10 @@ class GsubAnalyzer(object):
         feature_records = [self.gsub.table.FeatureList.FeatureRecord[idx] for idx in feature_indexes]
         self.lookup_indexes = self._get_lookup_indexes_in_feature(feature_records, feature_tag)
 
-    def show(self):
+    def show(self, renderer):
         for idx in self.lookup_indexes:
             lookup = self.gsub.table.LookupList.Lookup[idx]
-            self._analyze_lookup(lookup)
+            renderer.render(lookup)
 
     def _analyze_script(self):
         for record in self.gsub.table.ScriptList.ScriptRecord:
@@ -46,14 +56,18 @@ class GsubAnalyzer(object):
                 return [idx for idx in record.Feature.LookupListIndex]
         return []
 
-    def _analyze_lookup(self, lookup):
+class GsubRenderer(Renderer):
+    def render(self, lookup):
+        self._render_lookup(lookup)
+
+    def _render_lookup(self, lookup):
         print "LookupType: {}".format(lookup.LookupType)
         print "LookupFlag: {}".format(lookup.LookupFlag)
         for subtable in lookup.SubTable:
             if subtable.LookupType == GsubLookupType.LIGATURE:
-                self._anlyze_lookup_4(subtable)
+                self._render_lookup_4(subtable)
 
-    def _anlyze_lookup_4(self, subtable):
+    def _render_lookup_4(self, subtable):
         print " [subtable]"
         print " Format: {}".format(subtable.Format)
         for left_glyph, ligas in sorted(subtable.ligatures.items(), key=lambda (left_glyph,_): left_glyph):
@@ -64,6 +78,10 @@ class GsubAnalyzer(object):
 ################################################################################
 
 if __name__ == "__main__":
-    analyzer = GsubAnalyzer(sys.argv[1])
-    analyzer.analyze("DFLT", "dflt", "liga")
-    analyzer.show()
+    font_path = sys.argv[1]
+    fea = "liga"
+    if len(sys.argv) > 2:
+        fea = sys.argv[2]
+    analyzer = GsubAnalyzer(font_path)
+    analyzer.analyze("DFLT", "dflt", fea)
+    analyzer.show(GsubRenderer())
