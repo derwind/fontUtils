@@ -7,7 +7,7 @@ from fontTools.ttLib import TTFont
 from fontTools.ttLib.tables.otBase import ValueRecord
 
 class Renderer(object):
-    __metaclass__=ABCMeta
+    __metaclass__ = ABCMeta
 
     @abstractmethod
     def render(self, lookup):
@@ -78,28 +78,35 @@ class GposRenderer(Renderer):
 
     def _render_single(self, subtable):
         coverage = subtable.Coverage
-        if type(subtable.Value) == list:
-            for gname, val in zip(coverage.glyphs, subtable.Value):
-                self._render_ValueRecord(gname, val) 
-        elif type(subtable.Value) == ValueRecord:
+        if subtable.Format == 1:
             for gname in coverage.glyphs:
+                # some fonts have odd data
+                if subtable.Value is None:
+                    if 0:
+                        print "[WARN] {} has an invalid metrics".format(gname)
                 self._render_ValueRecord(gname, subtable.Value)
+        elif subtable.Format == 2:
+            for gname, val in zip(coverage.glyphs, subtable.Value):
+                self._render_ValueRecord(gname, val)
         else:
-            #print "???", type(subtable.Value)
-            pass
+            raise "not implemented yet"
 
     def _render_pair(self, subtable):
         # 'Class1Count', 'Class1Record', 'Class2Count', 'ClassDef1', 'ClassDef2', 'Coverage'
         # 'PairSet', 'PairSetCount'
 
         coverage = subtable.Coverage
-        #print dir(subtable)
-        for FirstGlyph, pair in zip(coverage.glyphs, subtable.PairSet):
-            for record in pair.PairValueRecord:
-                SecondGlyph = record.SecondGlyph
-                Value1 = record.Value1
-                Value2 = record.Value2
-                self._render_ValueRecord2(FirstGlyph, SecondGlyph, Value1)
+        if subtable.Format == 1:
+            for FirstGlyph, pair in zip(coverage.glyphs, subtable.PairSet):
+                for record in pair.PairValueRecord:
+                    SecondGlyph = record.SecondGlyph
+                    Value1 = record.Value1
+                    Value2 = record.Value2
+                    self._render_ValueRecord2(FirstGlyph, SecondGlyph, Value1)
+        elif subtable.Format == 2:
+            pass
+        else:
+            raise "not implemented yet"
 
         """
         if type(subtable.Value) == list:

@@ -6,7 +6,7 @@ from abc import ABCMeta, abstractmethod
 from fontTools.ttLib import TTFont
 
 class Renderer(object):
-    __metaclass__=ABCMeta
+    __metaclass__ = ABCMeta
 
     @abstractmethod
     def render(self, lookup):
