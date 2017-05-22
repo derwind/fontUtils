@@ -63,7 +63,7 @@ class GposRenderer(Renderer):
         self._render_lookup(lookup)
 
     def _render_lookup(self, lookup):
-        print "LookupType: {}, LookupFlag: {}".format(lookup.LookupType, lookup.LookupFlag)
+        print("LookupType: {}, LookupFlag: {}".format(lookup.LookupType, lookup.LookupFlag))
         for subtable in lookup.SubTable:
             if subtable.LookupType == GposLookupType.SINGLE:
                 self._render_single(subtable)
@@ -84,7 +84,7 @@ class GposRenderer(Renderer):
                 # some fonts have odd data
                 if subtable.Value is None:
                     if 0:
-                        print "[WARN] {} has an invalid metrics".format(gname)
+                        print("[WARN] {} has an invalid metrics".format(gname))
                 self._render_ValueRecord(gname, subtable.Value)
         # SinglePosFormat2 subtable: Array of positioning values
         elif subtable.Format == 2:
@@ -121,15 +121,15 @@ class GposRenderer(Renderer):
 
     def _render_ValueRecord(self, glyph_name, record):
         xplc, yplc, xadv, yadv = self._get_adjustment(record)
-        print "  pos {} <{} {} {} {}>;".format(glyph_name, xplc, yplc, xadv, yadv)
+        print("  pos {} <{} {} {} {}>;".format(glyph_name, xplc, yplc, xadv, yadv))
 
     def _render_ValueRecord2(self, glyph_name1, glyph_name2, record):
         xplc, yplc, xadv, yadv = self._get_adjustment(record)
-        print "  pos {} {} <{} {} {} {}>;".format(glyph_name1, glyph_name2, xplc, yplc, xadv, yadv)
+        print("  pos {} {} <{} {} {} {}>;".format(glyph_name1, glyph_name2, xplc, yplc, xadv, yadv))
 
     def _render_PairAdjustment(self, gnames1, gnames2, record):
         xplc, yplc, xadv, yadv = self._get_adjustment(record)
-        print "  pos [{}] [{}] <{} {} {} {}>;".format(",".join(gnames1), ",".join(gnames2), xplc, yplc, xadv, yadv)
+        print("  pos [{}] [{}] <{} {} {} {}>;".format(",".join(gnames1), ",".join(gnames2), xplc, yplc, xadv, yadv))
 
     def _has_no_adjustments(self, record):
         xplc, yplc, xadv, yadv = self._get_adjustment(record)
@@ -158,7 +158,8 @@ class GposRenderer(Renderer):
             d[classValue].append(gname)
         for classValue, gnames in d.items():
             d[classValue] = sorted(gnames)
-        return sorted(d.items(), key=lambda (classValue, gnames): gnames[0])
+        # for python 2, 'lambda (classValue,gnames): gnames[0]' is also valid
+        return sorted(d.items(), key=lambda classValue_gnames: classValue_gnames[1][0])
 
 ################################################################################
 

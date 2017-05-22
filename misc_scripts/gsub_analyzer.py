@@ -61,18 +61,19 @@ class GsubRenderer(Renderer):
         self._render_lookup(lookup)
 
     def _render_lookup(self, lookup):
-        print "LookupType: {}, LookupFlag: {}".format(lookup.LookupType, lookup.LookupFlag)
+        print("LookupType: {}, LookupFlag: {}".format(lookup.LookupType, lookup.LookupFlag))
         for subtable in lookup.SubTable:
             if subtable.LookupType == GsubLookupType.LIGATURE:
                 self._render_lookup_4(subtable)
 
     def _render_lookup_4(self, subtable):
-        print " [subtable]"
-        print " Format: {}".format(subtable.Format)
-        for left_glyph, ligas in sorted(subtable.ligatures.items(), key=lambda (left_glyph,_): left_glyph):
+        print(" [subtable]")
+        print(" Format: {}".format(subtable.Format))
+        # for python 2, 'lambda (left_glyph,_): left_glyph' is also valid
+        for left_glyph, ligas in sorted(subtable.ligatures.items(), key=lambda leftGlyph_ligas: leftGlyph_ligas[0]):
             for liga in ligas:
                 components = " ".join(liga.Component)
-                print "  sub {} {} by {};".format(left_glyph, components, liga.LigGlyph)
+                print("  sub {} {} by {};".format(left_glyph, components, liga.LigGlyph))
 
 ################################################################################
 
