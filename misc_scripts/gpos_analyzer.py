@@ -78,6 +78,7 @@ class GposRenderer(Renderer):
 
     def _render_single(self, subtable):
         coverage = subtable.Coverage
+        # SinglePosFormat1 subtable: Single positioning value
         if subtable.Format == 1:
             for gname in coverage.glyphs:
                 # some fonts have odd data
@@ -85,6 +86,7 @@ class GposRenderer(Renderer):
                     if 0:
                         print "[WARN] {} has an invalid metrics".format(gname)
                 self._render_ValueRecord(gname, subtable.Value)
+        # SinglePosFormat2 subtable: Array of positioning values
         elif subtable.Format == 2:
             for gname, val in zip(coverage.glyphs, subtable.Value):
                 self._render_ValueRecord(gname, val)
@@ -92,10 +94,8 @@ class GposRenderer(Renderer):
             raise "not implemented yet"
 
     def _render_pair(self, subtable):
-        # 'Class1Count', 'Class1Record', 'Class2Count', 'ClassDef1', 'ClassDef2', 'Coverage'
-        # 'PairSet', 'PairSetCount'
-
         coverage = subtable.Coverage
+        # PairPosFormat1 subtable: Adjustments for glyph pairs
         if subtable.Format == 1:
             for FirstGlyph, pair in zip(coverage.glyphs, subtable.PairSet):
                 for record in pair.PairValueRecord:
@@ -103,22 +103,21 @@ class GposRenderer(Renderer):
                     Value1 = record.Value1
                     Value2 = record.Value2
                     self._render_ValueRecord2(FirstGlyph, SecondGlyph, Value1)
+        # PairPosFormat2 subtable: Class pair adjustment
         elif subtable.Format == 2:
-            pass
+            ordered_classes1 = self._order_classes(subtable.ClassDef1.classDefs)
+            ordered_classes2 = self._order_classes(subtable.ClassDef2.classDefs)
+
+            for classValue1, gnames1 in ordered_classes1:
+                class1Record = subtable.Class1Record[classValue1]
+                class2Record = class1Record.Class2Record
+                for classValue2, gnames2 in ordered_classes2:
+                    record = class2Record[classValue2]
+                    if self._has_no_adjustments(record.Value1):
+                        continue
+                    self._render_PairAdjustment(gnames1, gnames2, record.Value1)
         else:
             raise "not implemented yet"
-
-        """
-        if type(subtable.Value) == list:
-            for gname, val in zip(coverage.glyphs, subtable.Value):
-                self._render_ValueRecord(gname, val)
-        elif type(subtable.Value) == ValueRecord:
-            for gname in coverage.glyphs:
-                self._render_ValueRecord(gname, subtable.Value)
-        else:
-            #print "???", type(subtable.Value)
-            pass
-        """
 
     def _render_ValueRecord(self, glyph_name, record):
         xplc = 0
@@ -149,6 +148,46 @@ class GposRenderer(Renderer):
         if hasattr(record, "YAdvance"):
             yadv = record.YAdvance
         print "  pos {} {} <{} {} {} {}>;".format(glyph_name1, glyph_name2, xplc, yplc, xadv, yadv)
+
+    def _render_PairAdjustment(self, gnames1, gnames2, record):
+        xplc = 0
+        yplc = 0
+        xadv = 0
+        yadv = 0
+        if hasattr(record, "XPlacement"):
+            xplc = record.XPlacement
+        if hasattr(record, "YPlacement"):
+            yplc = record.YPlacement
+        if hasattr(record, "XAdvance"):
+            xadv = record.XAdvance
+        if hasattr(record, "YAdvance"):
+            yadv = record.YAdvance
+        print "  pos [{}] [{}] <{} {} {} {}>;".format(",".join(gnames1), ",".join(gnames2), xplc, yplc, xadv, yadv)
+
+    def _has_no_adjustments(self, record):
+        xplc = 0
+        yplc = 0
+        xadv = 0
+        yadv = 0
+        if hasattr(record, "XPlacement"):
+            xplc = record.XPlacement
+        if hasattr(record, "YPlacement"):
+            yplc = record.YPlacement
+        if hasattr(record, "XAdvance"):
+            xadv = record.XAdvance
+        if hasattr(record, "YAdvance"):
+            yadv = record.YAdvance
+        return xplc == 0 and yplc == 0 and xadv == 0 and yadv == 0
+
+    def _order_classes(self, classDefs):
+        d = {}
+        for gname, classValue in classDefs.items():
+            if not classValue in d:
+                d[classValue] = []
+            d[classValue].append(gname)
+        for classValue, gnames in d.items():
+            d[classValue] = sorted(gnames)
+        return sorted(d.items(), key=lambda (classValue, gnames): gnames[0])
 
 ################################################################################
 
