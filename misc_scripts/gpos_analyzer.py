@@ -120,51 +120,22 @@ class GposRenderer(Renderer):
             raise "not implemented yet"
 
     def _render_ValueRecord(self, glyph_name, record):
-        xplc = 0
-        yplc = 0
-        xadv = 0
-        yadv = 0
-        if hasattr(record, "XPlacement"):
-            xplc = record.XPlacement
-        if hasattr(record, "YPlacement"):
-            yplc = record.YPlacement
-        if hasattr(record, "XAdvance"):
-            xadv = record.XAdvance
-        if hasattr(record, "YAdvance"):
-            yadv = record.YAdvance
+        xplc, yplc, xadv, yadv = self._get_adjustment(record)
         print "  pos {} <{} {} {} {}>;".format(glyph_name, xplc, yplc, xadv, yadv)
 
     def _render_ValueRecord2(self, glyph_name1, glyph_name2, record):
-        xplc = 0
-        yplc = 0
-        xadv = 0
-        yadv = 0
-        if hasattr(record, "XPlacement"):
-            xplc = record.XPlacement
-        if hasattr(record, "YPlacement"):
-            yplc = record.YPlacement
-        if hasattr(record, "XAdvance"):
-            xadv = record.XAdvance
-        if hasattr(record, "YAdvance"):
-            yadv = record.YAdvance
+        xplc, yplc, xadv, yadv = self._get_adjustment(record)
         print "  pos {} {} <{} {} {} {}>;".format(glyph_name1, glyph_name2, xplc, yplc, xadv, yadv)
 
     def _render_PairAdjustment(self, gnames1, gnames2, record):
-        xplc = 0
-        yplc = 0
-        xadv = 0
-        yadv = 0
-        if hasattr(record, "XPlacement"):
-            xplc = record.XPlacement
-        if hasattr(record, "YPlacement"):
-            yplc = record.YPlacement
-        if hasattr(record, "XAdvance"):
-            xadv = record.XAdvance
-        if hasattr(record, "YAdvance"):
-            yadv = record.YAdvance
+        xplc, yplc, xadv, yadv = self._get_adjustment(record)
         print "  pos [{}] [{}] <{} {} {} {}>;".format(",".join(gnames1), ",".join(gnames2), xplc, yplc, xadv, yadv)
 
     def _has_no_adjustments(self, record):
+        xplc, yplc, xadv, yadv = self._get_adjustment(record)
+        return xplc == 0 and yplc == 0 and xadv == 0 and yadv == 0
+
+    def _get_adjustment(self, record):
         xplc = 0
         yplc = 0
         xadv = 0
@@ -177,7 +148,7 @@ class GposRenderer(Renderer):
             xadv = record.XAdvance
         if hasattr(record, "YAdvance"):
             yadv = record.YAdvance
-        return xplc == 0 and yplc == 0 and xadv == 0 and yadv == 0
+        return xplc, yplc, xadv, yadv
 
     def _order_classes(self, classDefs):
         d = {}
