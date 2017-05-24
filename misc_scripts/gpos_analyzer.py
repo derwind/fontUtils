@@ -67,6 +67,8 @@ class GposRenderer(Renderer):
         for subtable in lookup.SubTable:
             if subtable.LookupType == GposLookupType.SINGLE:
                 self._render_single(subtable)
+            elif subtable.LookupType == GposLookupType.PAIR:
+                self._render_pair(subtable)
             elif subtable.LookupType == GposLookupType.EXTENSION_POSITIONING:
                 extSubTable = subtable.ExtSubTable
                 if extSubTable.LookupType == GposLookupType.SINGLE:
