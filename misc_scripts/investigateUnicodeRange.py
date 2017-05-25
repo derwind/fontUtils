@@ -9,6 +9,7 @@ if __name__ == "__main__":
     font = TTFont(font_path)
     OS_2 = font["OS/2"]
 
+    # https://www.microsoft.com/typography/otspec/os2.htm#ur
     ulUnicodeRange = set()
     if hasattr(OS_2, "ulUnicodeRange1"):
         for i in range(32):
@@ -29,6 +30,7 @@ if __name__ == "__main__":
     if ulUnicodeRange:
         print("UnicodeRange {}".format(" ".join(map(lambda x: str(x), sorted(ulUnicodeRange)))))
 
+    # https://www.microsoft.com/typography/otspec/os2.htm#cpr
     ulCodePageRange = set()
     if hasattr(OS_2, "ulCodePageRange1"):
         for i in range(32):
