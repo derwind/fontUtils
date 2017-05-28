@@ -63,8 +63,32 @@ class GsubRenderer(Renderer):
     def _render_lookup(self, lookup):
         print("LookupType: {}, LookupFlag: {}".format(lookup.LookupType, lookup.LookupFlag))
         for subtable in lookup.SubTable:
-            if subtable.LookupType == GsubLookupType.LIGATURE:
+            if subtable.LookupType == GsubLookupType.SINGLE:
+                self._render_lookup_1(subtable)
+            elif subtable.LookupType == GsubLookupType.MULTIPLE:
+                self._render_lookup_2(subtable)
+            elif subtable.LookupType == GsubLookupType.ALTERNATE:
+                self._render_lookup_3(subtable)
+            elif subtable.LookupType == GsubLookupType.LIGATURE:
                 self._render_lookup_4(subtable)
+            elif subtable.LookupType == GsubLookupType.EXTENSION_SUBSTITUTION:
+                self._render_lookup_7(subtable)
+
+    def _render_lookup_1(self, subtable):
+        print(" [subtable]")
+        print(" Format: {}".format(subtable.Format))
+        for from_, to_ in sorted(subtable.mapping.items(), key=lambda from_to: from_to[0]):
+            print("  sub {} by {};".format(from_, to_))
+
+    def _render_lookup_2(self, subtable):
+        print(" [subtable]")
+        print(" Format: {}".format(subtable.Format))
+
+    def _render_lookup_3(self, subtable):
+        print(" [subtable]")
+        print(" Format: {}".format(subtable.Format))
+        for to_, from_ in sorted(subtable.alternates.items(), key=lambda to_from: to_from[0]):
+            print("  sub {} from {};".format(to_, " ".join(sorted(from_))))
 
     def _render_lookup_4(self, subtable):
         print(" [subtable]")
@@ -74,6 +98,19 @@ class GsubRenderer(Renderer):
             for liga in ligas:
                 components = " ".join(liga.Component)
                 print("  sub {} {} by {};".format(left_glyph, components, liga.LigGlyph))
+
+    def _render_lookup_7(self, subtable):
+        extSubTable = subtable.ExtSubTable
+        if extSubTable.LookupType == GsubLookupType.SINGLE:
+            self._render_lookup_1(extSubTable)
+        elif extSubTable.LookupType == GsubLookupType.MULTIPLE:
+            self._render_lookup_2(extSubTable)
+        elif extSubTable.LookupType == GsubLookupType.ALTERNATE:
+            self._render_lookup_3(extSubTable)
+        elif extSubTable.LookupType == GsubLookupType.LIGATURE:
+            self._render_lookup_4(extSubTable)
+        else:
+            pass
 
 ################################################################################
 
