@@ -79,6 +79,7 @@ class GposRenderer(Renderer):
                     pass
 
     def _render_single(self, subtable):
+        print " [subtable] Format={}".format(subtable.Format)
         coverage = subtable.Coverage
         # SinglePosFormat1 subtable: Single positioning value
         if subtable.Format == 1:
@@ -93,9 +94,10 @@ class GposRenderer(Renderer):
             for gname, val in zip(coverage.glyphs, subtable.Value):
                 self._render_ValueRecord(gname, val)
         else:
-            raise "not implemented yet"
+            raise NotImplementedError()
 
     def _render_pair(self, subtable):
+        print " [subtable] Format={}".format(subtable.Format)
         coverage = subtable.Coverage
         # PairPosFormat1 subtable: Adjustments for glyph pairs
         if subtable.Format == 1:
@@ -107,7 +109,7 @@ class GposRenderer(Renderer):
                     self._render_ValueRecord2(FirstGlyph, SecondGlyph, Value1)
         # PairPosFormat2 subtable: Class pair adjustment
         elif subtable.Format == 2:
-            ordered_classes1 = self._order_classes(subtable.ClassDef1.classDefs)
+            ordered_classes1 = self._order_classes(subtable.ClassDef1.classDefs, coverage)
             ordered_classes2 = self._order_classes(subtable.ClassDef2.classDefs)
 
             for classValue1, gnames1 in ordered_classes1:
@@ -119,7 +121,7 @@ class GposRenderer(Renderer):
                         continue
                     self._render_PairAdjustment(gnames1, gnames2, record.Value1)
         else:
-            raise "not implemented yet"
+            raise NotImplementedError()
 
     def _render_ValueRecord(self, glyph_name, record):
         xplc, yplc, xadv, yadv = self._get_adjustment(record)
@@ -152,7 +154,7 @@ class GposRenderer(Renderer):
             yadv = record.YAdvance
         return xplc, yplc, xadv, yadv
 
-    def _order_classes(self, classDefs):
+    def _order_classes(self, classDefs, coverage=None):
         d = {}
         for gname, classValue in classDefs.items():
             if not classValue in d:
@@ -160,6 +162,15 @@ class GposRenderer(Renderer):
             d[classValue].append(gname)
         for classValue, gnames in d.items():
             d[classValue] = sorted(gnames)
+        # XXX: precise definition of Class 0?
+        # gnames = coverage - all glyphs belonging to any other classes?
+        if coverage is not None and 0 not in d:
+            glyphs = sorted(coverage.glyphs)
+            for classValue, gnames in d.items():
+                for gname in gnames:
+                    if gname in glyphs:
+                        glyphs.remove(gname)
+            d[0] = glyphs
         # for python 2, 'lambda (classValue,gnames): gnames[0]' is also valid
         return sorted(d.items(), key=lambda classValue_gnames: classValue_gnames[1][0])
 
