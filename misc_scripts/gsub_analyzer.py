@@ -87,8 +87,9 @@ class GsubRenderer(Renderer):
     def _render_lookup_3(self, subtable):
         print(" [subtable]")
         print(" Format: {}".format(subtable.Format))
-        for to_, from_ in sorted(subtable.alternates.items(), key=lambda to_from: to_from[0]):
-            print("  sub {} from {};".format(to_, " ".join(sorted(from_))))
+        for from_, tos in sorted(subtable.alternates.items(), key=lambda from_to: from_to[0]):
+            for to_ in tos:
+                print("  sub {} by {};".format(from_, to_))
 
     def _render_lookup_4(self, subtable):
         print(" [subtable]")
