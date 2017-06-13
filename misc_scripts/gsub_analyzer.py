@@ -101,6 +101,7 @@ class GsubRenderer(Renderer):
 
     def _render_lookup_7(self, subtable):
         extSubTable = subtable.ExtSubTable
+        print(" LookupType(ext): {}".format(extSubTable.LookupType))
         if extSubTable.LookupType == GsubLookupType.SINGLE:
             self._render_lookup_1(extSubTable)
         elif extSubTable.LookupType == GsubLookupType.MULTIPLE:
