@@ -71,34 +71,57 @@ class GsubRenderer(Renderer):
                 self._render_lookup_3(subtable)
             elif subtable.LookupType == GsubLookupType.LIGATURE:
                 self._render_lookup_4(subtable)
+            elif subtable.LookupType == GsubLookupType.CONTEXT:
+                self._render_lookup_5(subtable)
+            elif subtable.LookupType == GsubLookupType.CHAINING_CONTEXT:
+                self._render_lookup_6(subtable)
             elif subtable.LookupType == GsubLookupType.EXTENSION_SUBSTITUTION:
                 self._render_lookup_7(subtable)
 
     def _render_lookup_1(self, subtable):
-        print(" [subtable]")
-        print(" Format: {}".format(subtable.Format))
+        print(" [subtable] Format: {}".format(subtable.Format))
         for from_, to_ in sorted(subtable.mapping.items(), key=lambda from_to: from_to[0]):
             print("  sub {} by {};".format(from_, to_))
 
     def _render_lookup_2(self, subtable):
-        print(" [subtable]")
-        print(" Format: {}".format(subtable.Format))
+        print(" [subtable] Format: {}".format(subtable.Format))
 
     def _render_lookup_3(self, subtable):
-        print(" [subtable]")
-        print(" Format: {}".format(subtable.Format))
+        print(" [subtable] Format: {}".format(subtable.Format))
         for from_, tos in sorted(subtable.alternates.items(), key=lambda from_to: from_to[0]):
             for to_ in tos:
                 print("  sub {} by {};".format(from_, to_))
 
+    def _render_lookup_5(self, subtable):
+        print(" [subtable] Format: {}".format(subtable.Format))
+
     def _render_lookup_4(self, subtable):
-        print(" [subtable]")
-        print(" Format: {}".format(subtable.Format))
+        print(" [subtable] Format: {}".format(subtable.Format))
         # for python 2, 'lambda (left_glyph,_): left_glyph' is also valid
         for left_glyph, ligas in sorted(subtable.ligatures.items(), key=lambda leftGlyph_ligas: leftGlyph_ligas[0]):
             for liga in ligas:
                 components = " ".join(liga.Component)
                 print("  sub {} {} by {};".format(left_glyph, components, liga.LigGlyph))
+
+    def _render_lookup_6(self, subtable):
+        print(" [subtable] Format: {}".format(subtable.Format))
+        if subtable.Format == 1:
+            pass
+        elif subtable.Format == 2:
+            pass
+        elif subtable.Format == 3:
+            def glyphs2str(glyphs):
+                return glyphs[0] if len(glyphs) <= 1 else "[{}]".format(" ".join(glyphs))
+
+            Backtrack = [glyphs2str(coverage.glyphs) for coverage in subtable.BacktrackCoverage]
+            Input = [glyphs2str(coverage.glyphs) for coverage in subtable.InputCoverage]
+            Input_prime = map(lambda gname: "{}'".format(gname), Input)
+            LookAhead = [glyphs2str(coverage.glyphs) for coverage in subtable.LookAheadCoverage]
+
+            if subtable.SubstCount <= 0:
+                print("  ignore sub {} {} {};".format(" ".join(reversed(Backtrack)), " ".join(Input_prime), " ".join(LookAhead)))
+            else:
+                print("  sub {} {} {} by ???;".format(" ".join(reversed(Backtrack)), " ".join(Input_prime), " ".join(LookAhead)))
 
     def _render_lookup_7(self, subtable):
         extSubTable = subtable.ExtSubTable
