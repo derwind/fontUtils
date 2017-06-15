@@ -134,6 +134,10 @@ class GsubRenderer(Renderer):
             self._render_lookup_3(extSubTable)
         elif extSubTable.LookupType == GsubLookupType.LIGATURE:
             self._render_lookup_4(extSubTable)
+        elif extSubTable.LookupType == GsubLookupType.CONTEXT:
+            self._render_lookup_5(extSubTable)
+        elif extSubTable.LookupType == GsubLookupType.CHAINING_CONTEXT:
+            self._render_lookup_6(extSubTable)
         else:
             pass
 
