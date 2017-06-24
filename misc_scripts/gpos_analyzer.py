@@ -34,6 +34,11 @@ class GposAnalyzer(object):
         self.lookup_indexes = []
 
     def analyze(self, script, language, feature_tag):
+        if len(script) < 4:
+            script += " "*(4-len(script))
+        if len(language) < 4:
+            language += " "*(4-len(language))
+
         self._analyze_script()
         feature_indexes = self.lang_system[script][language]
 
@@ -181,6 +186,12 @@ if __name__ == "__main__":
     fea = "palt"
     if len(sys.argv) > 2:
         fea = sys.argv[2]
+    script = "DFLT"
+    if len(sys.argv) > 3:
+        script = sys.argv[3]
+    language = "dflt"
+    if len(sys.argv) > 4:
+        language = sys.argv[4]
     analyzer = GposAnalyzer(font_path)
-    analyzer.analyze("DFLT", "dflt", fea)
+    analyzer.analyze(script, language, fea)
     analyzer.show(GposRenderer())
