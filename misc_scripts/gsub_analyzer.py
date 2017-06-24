@@ -87,10 +87,10 @@ class GsubRenderer(Renderer):
 
     def _render_lookup_1(self, subtable):
         print(" [subtable] Format: {}".format(subtable.Format))
-        for from_, to_ in self._render_lookup_1_impl(subtable):
+        for from_, to_ in self._render_lookup_1_2_impl(subtable):
             print("  sub {} by {};".format(from_, to_))
 
-    def _render_lookup_1_impl(self, subtable):
+    def _render_lookup_1_2_impl(self, subtable):
         fromtos = []
         for from_, to_ in sorted(subtable.mapping.items(), key=lambda from_to: from_to[0]):
             fromtos.append((from_, to_))
@@ -98,6 +98,8 @@ class GsubRenderer(Renderer):
 
     def _render_lookup_2(self, subtable):
         print(" [subtable] Format: {}".format(subtable.Format))
+        for from_, tos_ in self._render_lookup_1_2_impl(subtable):
+            print("  sub {} by {};".format(from_, " ".join(tos_)))
 
     def _render_lookup_3(self, subtable):
         print(" [subtable] Format: {}".format(subtable.Format))
@@ -108,7 +110,7 @@ class GsubRenderer(Renderer):
     def _render_lookup_4(self, subtable):
         print(" [subtable] Format: {}".format(subtable.Format))
         for left_glyph, component, ligGlyph in self._render_lookup_4_impl(subtable):
-            print("  sub {} {} by {};".format(left_glyph, " ".join(components), ligGlyph))
+            print("  sub {} {} by {};".format(left_glyph, " ".join(component), ligGlyph))
 
     def _render_lookup_4_impl(self, subtable):
         left_comp_ligs = []
