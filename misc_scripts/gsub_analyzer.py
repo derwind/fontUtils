@@ -39,6 +39,11 @@ class GsubAnalyzer(object):
         self.lookup_indexes = []
 
     def analyze(self, script, language, feature_tag):
+        if len(script) < 4:
+            script += " "*(4-len(script))
+        if len(language) < 4:
+            language += " "*(4-len(language))
+
         self._analyze_script()
         feature_indexes = self.lang_system[script][language]
 
@@ -142,7 +147,7 @@ class GsubRenderer(Renderer):
             if subtable.SubstCount <= 0:
                 s = "ignore sub {} {} {}".format(" ".join(reversed(Backtrack)), " ".join(Input_prime), " ".join(LookAhead))
             else:
-                by_glyphs_str = self._render_lookup_6_SubstLookupRecord(subtable, Input, all_lookups)
+                by_glyphs_str = " ".join(self._render_lookup_6_SubstLookupRecord(subtable, Input, all_lookups))
 
                 s = "sub {} {} {} by {}".format(" ".join(reversed(Backtrack)), " ".join(Input_prime), " ".join(LookAhead), by_glyphs_str)
             print("  {};".format(re.sub(r"\s+", " ", s).strip()))
@@ -158,18 +163,22 @@ class GsubRenderer(Renderer):
             lookup = all_lookups[record.LookupListIndex]
             for subtable in lookup.SubTable:
                 if subtable.LookupType == GsubLookupType.SINGLE:
-                    for from_, to_ in self._render_lookup_1_impl(subtable):
+                    for from_, to_ in self._render_lookup_1_2_impl(subtable):
                         if [from_] == representative:
-                            return to_
+                            return [to_]
+                elif subtable.LookupType == GsubLookupType.MULTIPLE:
+                    for from_, tos_ in self._render_lookup_1_2_impl(subtable):
+                        if [from_] == representative:
+                            return tos_
                 elif subtable.LookupType == GsubLookupType.LIGATURE:
                     for left_glyph, component, ligGlyph in self._render_lookup_4_impl(subtable):
                         sequence = [left_glyph]
                         sequence.extend(component)
                         if sequence == representative:
-                            return ligGlyph
+                            return [ligGlyph]
                 else:
                     raise NotImplementedError()
-        return "???"
+        return ["???"]
 
     def _render_lookup_7(self, subtable):
         extSubTable = subtable.ExtSubTable
@@ -196,6 +205,12 @@ if __name__ == "__main__":
     fea = "liga"
     if len(sys.argv) > 2:
         fea = sys.argv[2]
+    script = "DFLT"
+    if len(sys.argv) > 3:
+        script = sys.argv[3]
+    language = "dflt"
+    if len(sys.argv) > 4:
+        language = sys.argv[4]
     analyzer = GsubAnalyzer(font_path)
-    analyzer.analyze("DFLT", "dflt", fea)
+    analyzer.analyze(script, language, fea)
     analyzer.show(GsubRenderer())
