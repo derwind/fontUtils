@@ -13,7 +13,7 @@ class SubstitutionMap(Renderer):
         super(SubstitutionMap, self).__init__()
         self.map = {}
 
-    def render(self, lookup):
+    def render(self, lookup, all_lookups):
         self._render_lookup(lookup)
 
     def _render_lookup(self, lookup):
