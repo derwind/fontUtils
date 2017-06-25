@@ -92,22 +92,15 @@ class SubstitutionMap(Renderer):
 
 if __name__ == "__main__":
     font_path = sys.argv[1]
-    fea_type = "liga"
-    if len(sys.argv) > 2:
-        fea_type = sys.argv[2]
     analyzer = GsubAnalyzer(font_path)
     analyzer.analyze("DFLT", "dflt", "aalt")
     aalt = SubstitutionMap()
     analyzer.show(aalt)
-    analyzer = GsubAnalyzer(font_path)
-    analyzer.analyze("DFLT", "dflt", fea_type)
-    fea = SubstitutionMap()
-    analyzer.show(fea)
 
     ok = True
     total_cnt = 0
     ng_cnt = 0
-    for from_cid, to_cids in fea.map.items():
+    for from_cid, to_cids in aalt.map.items():
         for to_cid in to_cids:
             total_cnt += 1
             if from_cid not in aalt.map:
