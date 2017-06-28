@@ -88,7 +88,7 @@ class GsubRenderer(Renderer):
             elif subtable.LookupType == GsubLookupType.CHAINING_CONTEXT:
                 self._render_lookup_6(subtable, all_lookups)
             elif subtable.LookupType == GsubLookupType.EXTENSION_SUBSTITUTION:
-                self._render_lookup_7(subtable)
+                self._render_lookup_7(subtable, all_lookups)
 
     def _render_lookup_1(self, subtable):
         print(" [subtable] Format: {}".format(subtable.Format))
@@ -180,7 +180,7 @@ class GsubRenderer(Renderer):
                     raise NotImplementedError()
         return ["???"]
 
-    def _render_lookup_7(self, subtable):
+    def _render_lookup_7(self, subtable, all_lookups):
         extSubTable = subtable.ExtSubTable
         print(" LookupType(ext): {}".format(extSubTable.LookupType))
         if extSubTable.LookupType == GsubLookupType.SINGLE:
@@ -194,7 +194,7 @@ class GsubRenderer(Renderer):
         elif extSubTable.LookupType == GsubLookupType.CONTEXT:
             self._render_lookup_5(extSubTable)
         elif extSubTable.LookupType == GsubLookupType.CHAINING_CONTEXT:
-            self._render_lookup_6(extSubTable)
+            self._render_lookup_6(extSubTable, all_lookups)
         else:
             pass
 
