@@ -4,6 +4,9 @@ utilities related to fonts
 ## otfparser
 parser for OTF
 
+## otfanalyzer
+analyzer for OTF
+
 ## outlineCheckerMini
 check outlines of glyphs in a font (inactive project)
 
