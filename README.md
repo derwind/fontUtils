@@ -10,6 +10,12 @@ analyzer for OTF
 ## outlineCheckerMini
 check outlines of glyphs in a font (inactive project)
 
+## adobe
+scripts related to Adobe tools
+
+### adobe/mkicf.py
+python version of mkicf.pl
+
 ## ai0\_to\_aj1
 test project which converts Adobe-Identity-0 CID-keyed fonts to Adobe-Japan1-3 CID-keyed fonts
 
