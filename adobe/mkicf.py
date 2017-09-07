@@ -38,12 +38,14 @@ if __name__ == "__main__":
                                int("3041", 16) <= char <= int("3094", 16) or \
                                int("30A1", 16) <= char <= int("30FA", 16) or \
                                int("AC00", 16) <= char <= int("D7A3", 16):
-                                   code = "{0:02X}".format(char)
-                                   code2cid[code] = cid
-                                   cid2code[cid] = code
-                                   count += 1
-                                   cid += 1
-        print "Done."
+                                code = "{0:02X}".format(char)
+                                code2cid[code] = cid
+                                cid2code[cid] = code
+                                count += 1
+                                cid += 1
+        print>>sys.stderr, "Done."
+
+        print>>sys.stderr, "Storing AFM records for",
 
         fontname = ""
         version = ""
@@ -56,7 +58,7 @@ if __name__ == "__main__":
                 m = re.search(r"^FontName\s+(.*)$", line)
                 if m:
                     fontname = m.group(1)
-                    print>>sys.stderr, "\"{}\" CIDFont into lookup structure...".format(fontname)
+                    print>>sys.stderr, "\"{}\" CIDFont into lookup structure...".format(fontname),
                     continue
                 m = re.search(r"^Version\s+(.*)$", line)
                 if m:
@@ -92,7 +94,7 @@ if __name__ == "__main__":
                                 lly += b
                                 urx += c
                                 ury += d
-        print "Done."
+        print>>sys.stderr, "Done."
 
         left = llx / num
         right = 1000 - (urx / num)
