@@ -88,20 +88,18 @@ class ConvPen(AbstractPen):
 class DetectIntersections(object):
     def __init__(self, in_font):
         self.in_font = in_font
+        self.font = TTFont(self.in_font)
         basename, ext = os.path.splitext(os.path.basename(in_font))
         self.degree = 2 if ext.lower() == ".ttf" else 3
 
     def run(self):
-        font = TTFont(self.in_font)
-
-        gs = font.getGlyphSet()
-        for gname in font.getGlyphOrder():
-            g = gs[gname]
-            intersections = self.detect(g, gname, gs)
+        for gname in self.font.getGlyphOrder():
+            intersections = self.detect(gname)
             if intersections:
                 print "{}:".format(gname), ", ".join(["({}, {})".format(pt[0], pt[1]) for pt in intersections])
 
-    def detect(self, glyph, name, glyphSet):
+    def detect(self, name):
+        glyph = self.font.getGlyphSet()[name]
         pen = ConvPen(self.degree)
         glyph.draw(pen)
         contours = pen.contours
