@@ -7,7 +7,7 @@ detect intersections
 
 import os, sys, re
 import numpy as np
-import bezier
+import bezier, bezier.curve
 from fontTools.ttLib import TTFont
 from fontTools.pens.basePen import AbstractPen, decomposeQuadraticSegment
 
@@ -84,6 +84,9 @@ class ConvPen(AbstractPen):
     #def addComponent(self, glyphName, transformation):
     #    pass
 
+class Adjacent(object):
+    NONE, LEFT, RIGHT = range(3)
+
 class DetectIntersections(object):
     def __init__(self, in_font):
         self.in_font = in_font
@@ -121,7 +124,11 @@ class DetectIntersections(object):
         intersections = set()
         for i in range(len(contour) - 1):
             for j in range(i+1, len(contour)):
-                adjacent = j==i+1 or (i==0 and j >= len(contour) - 1)
+                adjacent = Adjacent.NONE
+                if j == i+1:
+                    adjacent = Adjacent.RIGHT
+                elif i == 0 and j >= len(contour) - 1:
+                    adjacent = Adjacent.LEFT
                 intersections = intersections | self.detect_between_curves(contour[i], contour[j], adjacent=adjacent)
         return intersections
 
@@ -132,17 +139,24 @@ class DetectIntersections(object):
                 intersections = intersections | self.detect_between_curves(curve1, curve2)
         return intersections
 
-    def detect_between_curves(self, curve1, curve2, adjacent=False):
-        try:
-            intersections = curve1.intersect(curve2)
-            if len(intersections) > 0 and not adjacent:
-                intersections_ = set()
-                for pt in intersections:
-                    intersections_.add((round(pt[0], 2), round(pt[1], 2)))
-                return intersections_
-        except NotImplementedError:
-            pass
-        return set()
+    def detect_between_curves(self, curve1, curve2, adjacent=Adjacent.NONE):
+        intersections = set()
+        left_pt = (round(curve1.nodes[0][0], 2), round(curve1.nodes[0][1], 2))
+        right_pt = (round(curve1.nodes[-1][0], 2), round(curve1.nodes[-1][1], 2))
+        for strategy in [bezier.curve.IntersectionStrategy.geometric, bezier.curve.IntersectionStrategy.algebraic]:
+            try:
+                for pt in curve1.intersect(curve2, strategy=strategy):
+                    pt = (round(pt[0], 2), round(pt[1], 2))
+                    if adjacent == Adjacent.LEFT:
+                        if pt == left_pt:
+                            continue
+                    elif adjacent == Adjacent.RIGHT:
+                        if pt == right_pt:
+                            continue
+                    intersections.add(pt)
+            except NotImplementedError:
+                pass
+        return intersections
 
 def get_args():
     import argparse
