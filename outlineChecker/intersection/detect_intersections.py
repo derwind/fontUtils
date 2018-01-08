@@ -84,13 +84,14 @@ class ConvPen(AbstractPen):
     #def addComponent(self, glyphName, transformation):
     #    pass
 
-class Adjacent(object):
-    NONE, LEFT, RIGHT = range(3)
+#class Adjacent(object):
+#    NONE, LEFT, RIGHT = range(3)
 
 class DetectIntersections(object):
     def __init__(self, in_font):
         self.in_font = in_font
         self.font = TTFont(self.in_font)
+        self._is_cjk = self.is_cjk()
         basename, ext = os.path.splitext(os.path.basename(in_font))
         self.degree = 2 if ext.lower() == ".ttf" else 3
 
@@ -124,11 +125,7 @@ class DetectIntersections(object):
         intersections = set()
         for i in range(len(contour) - 1):
             for j in range(i+1, len(contour)):
-                adjacent = Adjacent.NONE
-                if j == i+1:
-                    adjacent = Adjacent.RIGHT
-                elif i == 0 and j >= len(contour) - 1:
-                    adjacent = Adjacent.LEFT
+                adjacent = j == i+1 or (i == 0 and j >= len(contour) - 1)
                 intersections = intersections | self.detect_between_curves(contour[i], contour[j], adjacent=adjacent)
         return intersections
 
@@ -139,7 +136,7 @@ class DetectIntersections(object):
                 intersections = intersections | self.detect_between_curves(curve1, curve2)
         return intersections
 
-    def detect_between_curves(self, curve1, curve2, adjacent=Adjacent.NONE):
+    def detect_between_curves(self, curve1, curve2, adjacent=False):
         intersections = set()
         left_pt = (round(curve1.nodes[0][0], 2), round(curve1.nodes[0][1], 2))
         right_pt = (round(curve1.nodes[-1][0], 2), round(curve1.nodes[-1][1], 2))
@@ -147,16 +144,23 @@ class DetectIntersections(object):
             try:
                 for pt in curve1.intersect(curve2, strategy=strategy):
                     pt = (round(pt[0], 2), round(pt[1], 2))
-                    if adjacent == Adjacent.LEFT:
-                        if pt == left_pt:
-                            continue
-                    elif adjacent == Adjacent.RIGHT:
-                        if pt == right_pt:
+                    if adjacent:
+                        if pt == left_pt or pt == right_pt:
                             continue
                     intersections.add(pt)
             except NotImplementedError:
                 pass
+            except ValueError:
+                pass
         return intersections
+
+    def gid2name(self, gid):
+        return self.font.getGlyphOrder()[gid]
+
+    def is_cjk(self):
+        if "CFF " not in self.font:
+            return False
+        return hasattr(self.font["CFF "].cff.topDictIndex[0], "ROS")
 
 def get_args():
     import argparse
