@@ -140,7 +140,7 @@ class DetectIntersections(object):
             if len(intersections) > 0 and not adjacent:
                 intersections_ = set()
                 for pt in intersections:
-                    intersections_.add((pt[0], pt[1]))
+                    intersections_.add((round(pt[0], 2), round(pt[1], 2)))
                 return intersections_
         except NotImplementedError:
             pass
