@@ -6,7 +6,6 @@ detect intersections
 """
 
 import os, sys, re
-import argparse
 import numpy as np
 import bezier
 from fontTools.ttLib import TTFont
@@ -146,16 +145,11 @@ class DetectIntersections(object):
         return set()
 
 def get_args():
+    import argparse
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("in_font", metavar="FONT", type=str,
                         help="input font")
-    #parser.add_argument("-o", "--output", dest="out_font", default=None,
-    #                    help="output font")
-
     args = parser.parse_args()
-
-    #if args.out_font is None:
-    #    args.out_font = args.in_font
 
     return args
 
