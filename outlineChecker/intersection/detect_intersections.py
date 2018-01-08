@@ -108,8 +108,9 @@ class DetectIntersections(object):
         for contour in contours:
             intersections = intersections | self.detect_in_contour(contour)
 
+        # finish in case of no contours or only one contour
         if len(contours) <= 1:
-            return
+            return intersections
 
         for i in range(len(contours) - 1):
             for j in range(i+1, len(contours)):
