@@ -87,26 +87,8 @@ class ConvPen(AbstractPen):
 #class Adjacent(object):
 #    NONE, LEFT, RIGHT = range(3)
 
-class DetectIntersections(object):
-    def __init__(self, in_font):
-        self.in_font = in_font
-        self.font = TTFont(self.in_font)
-        self._is_cjk = self.is_cjk()
-        basename, ext = os.path.splitext(os.path.basename(in_font))
-        self.degree = 2 if ext.lower() == ".ttf" else 3
-
-    def run(self):
-        for gname in self.font.getGlyphOrder():
-            intersections = self.detect(gname)
-            if intersections:
-                print "{}:".format(gname), ", ".join(["({}, {})".format(pt[0], pt[1]) for pt in intersections])
-
-    def detect(self, name):
-        glyph = self.font.getGlyphSet()[name]
-        pen = ConvPen(self.degree)
-        glyph.draw(pen)
-        contours = pen.contours
-
+class BaseDetectIntersections(object):
+    def detect_intersections(self, contours):
         intersections = set()
         for contour in contours:
             intersections = intersections | self.detect_in_contour(contour)
@@ -153,6 +135,26 @@ class DetectIntersections(object):
             except ValueError:
                 pass
         return intersections
+
+class DetectIntersections(BaseDetectIntersections):
+    def __init__(self, in_font):
+        self.in_font = in_font
+        self.font = TTFont(self.in_font)
+        self._is_cjk = self.is_cjk()
+        basename, ext = os.path.splitext(os.path.basename(in_font))
+        self.degree = 2 if ext.lower() == ".ttf" else 3
+
+    def run(self):
+        for gname in self.font.getGlyphOrder():
+            intersections = self.detect(gname)
+            if intersections:
+                print "{}:".format(gname), ", ".join(["({}, {})".format(pt[0], pt[1]) for pt in intersections])
+
+    def detect(self, name):
+        glyph = self.font.getGlyphSet()[name]
+        pen = ConvPen(self.degree)
+        glyph.draw(pen)
+        return self.detect_intersections(pen.contours)
 
     def gid2name(self, gid):
         return self.font.getGlyphOrder()[gid]
