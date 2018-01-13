@@ -39,13 +39,13 @@ def compare_bounds():
     font1 = TTFont(font1_path, fontNumber=0)
     font2 = TTFont(font2_path, fontNumber=0)
     for gname in font1.getGlyphOrder():
-        bound1 = calc_bounds(font1, gname, BoundsPen)
-        bound2 = calc_bounds(font2, gname, BoundsPen)
-        if bound1 is None or bound2 is None:
-            if bound1 is not None or bound2 is not None:
-                print "[{}] {} {}".format(gname, bound1, bound2)
-        elif bounds_differ(bound1, bound2):
-            print "[{}] {} {}".format(gname, bound1, bound2)
+        bounds1 = calc_bounds(font1, gname, BoundsPen)
+        bounds2 = calc_bounds(font2, gname, BoundsPen)
+        if bounds1 is None or bounds2 is None:
+            if bounds1 is not None or bounds2 is not None:
+                print "[{}] {} {}".format(gname, bounds1, bounds2)
+        elif bounds_differ(bounds1, bounds2):
+            print "[{}] {} {}".format(gname, bounds1, bounds2)
 
 def main():
     compare_bounds()
