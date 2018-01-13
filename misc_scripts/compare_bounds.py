@@ -29,7 +29,7 @@ def calc_bounds(font, gname, penclass):
 
 def bounds_differ(bounds1, bounds2):
     for v1, v2 in zip(bounds1, bounds2):
-        if abs(v1 - v2) > 1:
+        if abs(v1 - v2) >= 1:
             return True
     return False
 
