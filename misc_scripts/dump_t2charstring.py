@@ -20,15 +20,15 @@ class ProgramDumper(object):
         for gname in font.getGlyphOrder():
             g = gs[gname]._glyph
             g.decompile()
-            print "[{}]".format(gname)
+            print("[{}]".format(gname))
             operands = []
             for b in g.program:
                 if isinstance(b, int):
                     operands.append(b)
                 else:
-                    print "  [{}] << {} >>".format(", ".join(map(lambda v: str(v), operands)), b)
+                    print("  [{}] << {} >>".format(", ".join(map(lambda v: str(v), operands)), b))
                     operands = []
-            print "  -----"
+            print("  -----")
 
 def get_args():
     parser = argparse.ArgumentParser(description=__doc__)
