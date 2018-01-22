@@ -17,8 +17,10 @@ class HtmxUpdater(object):
         glyf = font["glyf"]
         hmtx = font["hmtx"]
         for gname, (adw, lsb) in hmtx.metrics.items():
+            # https://github.com/fonttools/fonttools/blob/master/Lib/fontTools/ttLib/tables/_g_l_y_f.py#L189-L192
+            # __getitem__ internally calls table__g_l_y_f.expand which is essential to obtain xMin
             g = glyf[gname]
-            # obtain xMin
+            # obtain recalculated xMin from glyph's control bounds
             g.recalcBounds(glyf)
             hmtx.metrics[gname] = (adw, g.xMin)
         if self.update_vmtx:
