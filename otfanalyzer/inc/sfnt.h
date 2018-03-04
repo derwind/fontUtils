@@ -7,6 +7,7 @@
 #include "sfntHeader.h"
 
 class TableRecord;
+class Table;
 
 class Sfnt {
  public:
@@ -29,6 +30,7 @@ class Sfnt {
 
 	SfntHeader sfntHeader_;
 	std::vector<TableRecord*> tableRecords_;
+	std::vector<Table*> tables_;
 };
 
 #endif /* SFNT_H */

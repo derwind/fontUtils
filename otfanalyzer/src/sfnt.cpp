@@ -4,6 +4,7 @@
 #include "tableRecord.h"
 #include "tag.h"
 #include "maxpTable.h"
+#include "os_2Table.h"
 
 Sfnt::Sfnt(const char* path)
 :
@@ -14,6 +15,9 @@ path_(path)
 Sfnt::~Sfnt()
 {
 	for (auto it = tableRecords_.begin(); it != tableRecords_.end(); ++it) {
+		delete *it;
+	}
+	for (auto it = tables_.begin(); it != tables_.end(); ++it) {
 		delete *it;
 	}
 }
@@ -58,11 +62,18 @@ int Sfnt::create_tableRecords(std::fstream& ifs)
 
 int Sfnt::create_tables(std::fstream& ifs)
 {
+	// create mxap first to know the number of glyphs
 	TableRecord* maxp_record = find_maxp_record();
 	if ( !maxp_record ) {
 		return -1;
 	}
 	create_table(ifs, maxp_record);
+
+	for (auto it = tableRecords_.begin(); it != tableRecords_.end(); ++it) {
+		if ( !(*it)->get_tag()->is("maxp") ) {
+			create_table(ifs, *it);
+		}
+	}
 
 	return 0;
 }
@@ -90,12 +101,14 @@ void Sfnt::create_table(std::fstream& ifs, TableRecord* record)
 	if ( record->get_tag()->is("maxp") ) {
 		table = new MaxpTable(record->get_tag());
 	}
-	else {
+	else if ( record->get_tag()->is("OS/2") ) {
+		table = new OS_2Table(record->get_tag());
 	}
 
 	if ( table ) {
 		table->parse(buf, length);
 		record->set_table(table);
+		tables_.push_back(table);
 	}
 
 	delete [] buf;

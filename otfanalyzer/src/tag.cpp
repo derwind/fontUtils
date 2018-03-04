@@ -23,8 +23,17 @@ bool Tag::is(const char* tag) const
 		return false;
 	}
 
-	std::string s = str_;
-	std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+	std::string s1 = str_;
+	std::transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
 
-	return ( s == tag );
+	std::string s2 = tag;
+	std::transform(s2.begin(), s2.end(), s2.begin(), ::tolower);
+
+
+	return ( s1 == s2 );
+}
+
+bool Tag::is(const Tag& tag) const
+{
+	return is(tag.c_str());
 }

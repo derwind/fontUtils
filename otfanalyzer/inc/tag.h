@@ -10,6 +10,10 @@ class Tag {
 
 	inline const char* c_str() const { return str_; };
 	bool is(const char* tag) const;
+	bool is(const Tag& tag) const;
+
+	bool operator==(const Tag& tag) { return is(tag); }
+	bool operator!=(const Tag& tag) { return !is(tag); }
 
  private:
 	uint32_t tag_;

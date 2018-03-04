@@ -16,9 +16,6 @@ table_(nullptr)
 
 TableRecord::~TableRecord()
 {
-	if ( table_ ) {
-		delete table_;
-	}
 	if ( tag_ ) {
 		delete tag_;
 	}
