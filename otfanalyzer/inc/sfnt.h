@@ -22,7 +22,7 @@ class Sfnt {
 	int create_tables(std::fstream& ifs);
 
 	TableRecord* find_maxp_record();
-	void create_maxp_table(std::fstream& ifs, TableRecord* maxp_record);
+	void create_table(std::fstream& ifs, TableRecord* record);
 
  private:
 	std::string path_;

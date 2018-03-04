@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <string>
 #include "sfnt.h"
 #include "tableRecord.h"
 #include "tag.h"
@@ -61,7 +62,7 @@ int Sfnt::create_tables(std::fstream& ifs)
 	if ( !maxp_record ) {
 		return -1;
 	}
-	create_maxp_table(ifs, maxp_record);
+	create_table(ifs, maxp_record);
 
 	return 0;
 }
@@ -77,16 +78,26 @@ TableRecord* Sfnt::find_maxp_record()
 	return nullptr;
 }
 
-void Sfnt::create_maxp_table(std::fstream& ifs, TableRecord* maxp_record)
+void Sfnt::create_table(std::fstream& ifs, TableRecord* record)
 {
-	uint32_t offset = maxp_record->get_offset();
-	uint32_t length = maxp_record->get_length();
+	uint32_t offset = record->get_offset();
+	uint32_t length = record->get_length();
 	ifs.seekg(offset, std::ios_base::beg);
 	unsigned char* buf = new unsigned char[length];
 	ifs.read((char*)buf, length);
-	MaxpTable* maxp_table = new MaxpTable(maxp_record->get_tag());
-	maxp_table->parse(buf, length);
-	maxp_record->set_table(maxp_table);
+	Table* table = nullptr;
+
+	if ( record->get_tag()->is("maxp") ) {
+		table = new MaxpTable(record->get_tag());
+	}
+	else {
+	}
+
+	if ( table ) {
+		table->parse(buf, length);
+		record->set_table(table);
+	}
+
 	delete [] buf;
 }
 

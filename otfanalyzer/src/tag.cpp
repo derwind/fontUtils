@@ -1,4 +1,5 @@
 #include <cstring>
+#include <string>
 #include "tag.h"
 
 Tag::Tag(uint32_t tag)
@@ -21,5 +22,9 @@ bool Tag::is(const char* tag) const
 	if ( !tag ) {
 		return false;
 	}
-	return ( strcmp(str_, tag) == 0 );
+
+	std::string s = str_;
+	std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+
+	return ( s == tag );
 }
