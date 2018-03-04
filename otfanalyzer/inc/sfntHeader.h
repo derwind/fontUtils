@@ -13,7 +13,7 @@ class SfntHeader {
 
 	int parse(unsigned char* buf, unsigned bufSize);
 
-	uint16_t get_num_tables() const { return num_tables_; }
+	inline uint16_t get_num_tables() const { return num_tables_; }
 
 	void show() const;
 
