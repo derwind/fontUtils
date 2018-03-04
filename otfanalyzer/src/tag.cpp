@@ -1,5 +1,6 @@
 #include <cstring>
 #include <string>
+#include <algorithm>
 #include "tag.h"
 
 Tag::Tag(uint32_t tag)

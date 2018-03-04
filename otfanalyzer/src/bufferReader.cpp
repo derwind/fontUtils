@@ -1,6 +1,11 @@
 #include <cstring>
-#include <arpa/inet.h>
 #include "bufferReader.h"
+
+#ifdef WIN32
+#include <Winsock2.h>
+#else /* !WIN32 */
+#include <arpa/inet.h>
+#endif /* !WIN32 */
 
 BufferReader::BufferReader()
 :
