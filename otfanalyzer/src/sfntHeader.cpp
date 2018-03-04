@@ -1,6 +1,4 @@
 #include <cstdio>
-#include <cstring>
-#include <arpa/inet.h>
 #include "sfntHeader.h"
 #include "bufferReader.h"
 
@@ -37,7 +35,7 @@ int SfntHeader::parse(unsigned char* buf, unsigned bufSize)
 
 void SfntHeader::show() const
 {
-	printf("[Header]\n");
+	printf("[sfntHeader]\n");
 	printf("  num_tables    = %u\n", num_tables_);
 	printf("  search_range  = %u\n", search_range_);
 	printf("  entry_selector= %u\n", entry_selector_);

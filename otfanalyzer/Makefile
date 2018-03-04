@@ -1,7 +1,7 @@
 CXX = clang++
 
 INC += -I. -I./inc
-CXXFLAGS += $(INC) -O2
+CXXFLAGS += $(INC) -O2 -std=c++11
 
 TARGET = otfanalyzer
 
