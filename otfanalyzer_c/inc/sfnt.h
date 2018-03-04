@@ -11,8 +11,10 @@ typedef struct Sfnt {
 
 	SfntHeader* sfntHeader_;
 	struct TableRecord** tableRecords_;
+	unsigned tableRecordsIdx_;
 	unsigned tableRecordsLen_;
 	struct Table** table_;
+	unsigned tablesIdx_;
 	unsigned tablesLen_;
 } Sfnt;
 
