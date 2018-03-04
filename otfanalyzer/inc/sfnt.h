@@ -2,6 +2,7 @@
 #define SFNT_H
 
 #include <string>
+#include <fstream>
 #include <vector>
 #include "sfntHeader.h"
 
@@ -17,7 +18,11 @@ class Sfnt {
 	void show() const;
 
  private:
-	
+	int create_tableRecords(std::fstream& ifs);
+	int create_tables(std::fstream& ifs);
+
+	TableRecord* find_maxp_record();
+	void create_maxp_table(std::fstream& ifs, TableRecord* maxp_record);
 
  private:
 	std::string path_;

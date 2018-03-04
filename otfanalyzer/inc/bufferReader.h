@@ -5,6 +5,9 @@
 
 class BufferReader {
  public:
+	static double fixed2double(uint32_t value) { return 1.0 * value / 65536; }
+
+ public:
 	BufferReader();
 	BufferReader(unsigned char* buf, unsigned bufSize);
 	~BufferReader();
@@ -15,6 +18,7 @@ class BufferReader {
 	uint8_t readUint8();
 	uint16_t readUint16();
 	uint32_t readUint32();
+	uint32_t readFixed();
 
  private:
 	unsigned char* buf_;

@@ -1,6 +1,6 @@
 TARGET=libotfanalyzer.a
 
-OBJS = sfnt.o sfntHeader.o bufferReader.o tableRecord.o
+OBJS = sfnt.o sfntHeader.o bufferReader.o tableRecord.o tag.o table.o maxpTable.o
 
 INC += -I. -I../inc
 

@@ -3,7 +3,7 @@
 
 BufferReader::BufferReader()
 :
-buf_(0),
+buf_(nullptr),
 size_(0),
 loc_(0)
 {
@@ -53,6 +53,14 @@ uint16_t BufferReader::readUint16()
 }
 
 uint32_t BufferReader::readUint32()
+{
+	uint32_t value = *((uint32_t*)loc_);
+	loc_ += 4;
+
+	return ntohl(value);
+}
+
+uint32_t BufferReader::readFixed()
 {
 	uint32_t value = *((uint32_t*)loc_);
 	loc_ += 4;
