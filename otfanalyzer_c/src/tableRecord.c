@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "tableRecord.h"
 #include "tag.h"
-//#include "table.h"
+#include "table.h"
 #include "bufferReader.h"
 
 #define SAFE_FREE(x) if (x) { free(x); }
@@ -71,6 +71,6 @@ void TableRecord_show(const TableRecord* tableRecord)
 	printf("  length     = %u\n", tableRecord->length_);
 
 	if ( tableRecord->table_ ) {
-		//Table_show(tableRecord->table_);
+		Table_show(tableRecord->table_);
 	}
 }

@@ -3,11 +3,16 @@
 #include <stdlib.h>
 #include "sfnt.h"
 #include "tableRecord.h"
+#include "table.h"
 #include "tag.h"
+#include "maxpTable.h"
 
 #define SAFE_FREE(x) if (x) { free(x); }
 
 static int Sfnt_create_tableRecords(Sfnt* sfnt, FILE* fp);
+static int Sfnt_create_tables(Sfnt* sfnt, FILE* fp);
+static TableRecord* Sfnt_find_maxp_record(Sfnt* sfnt);
+static void Sfnt_create_table(Sfnt* sfnt, FILE* fp, TableRecord* record);
 
 Sfnt* Sfnt_create(const char* path)
 {
@@ -39,9 +44,9 @@ void Sfnt_delete(Sfnt* sfnt)
 	}
 	SAFE_FREE(sfnt->tableRecords_);
 	for (i = 0; i < sfnt->tablesIdx_; ++i) {
-		//Table_delete(sfnt->table_[i]);
+		Table_delete(sfnt->tables_[i]);
 	}
-	SAFE_FREE(sfnt->table_);
+	SAFE_FREE(sfnt->tables_);
 
 	SfntHeader_delete(sfnt->sfntHeader_);
 	SAFE_FREE(sfnt->path_);
@@ -66,12 +71,10 @@ int Sfnt_parse(Sfnt* sfnt)
 		result = -1;
 		goto end_proc;
 	}
-	/*
 	if ( Sfnt_create_tables(sfnt, fp) != 0 ) {
 		result = -1;
 		goto end_proc;
 	}
-	*/
 
  end_proc:
 	fclose(fp);
@@ -82,7 +85,7 @@ int Sfnt_parse(Sfnt* sfnt)
 int Sfnt_create_tableRecords(Sfnt* sfnt, FILE* fp)
 {
 	uint16_t num_tables = SfntHeader_get_num_tables(sfnt->sfntHeader_);
-	sfnt->tableRecordsLen_ = sfnt->tablesLen_ = num_tables;
+	sfnt->tableRecordsLen_ = num_tables;
 	sfnt->tableRecords_ = (TableRecord**)malloc(sizeof(TableRecord*) * num_tables);
 
 	unsigned char buf[TableRecord_SIZE];
@@ -98,6 +101,64 @@ int Sfnt_create_tableRecords(Sfnt* sfnt, FILE* fp)
 	}
 
 	return 0;
+}
+
+int Sfnt_create_tables(Sfnt* sfnt, FILE* fp)
+{
+	uint16_t num_tables = SfntHeader_get_num_tables(sfnt->sfntHeader_);
+	sfnt->tablesLen_ = num_tables;
+	sfnt->tables_ = (Table**)malloc(sizeof(Table*) * num_tables);
+
+	// create mxap first to know the number of glyphs
+	TableRecord* maxp_record = Sfnt_find_maxp_record(sfnt);
+	if ( !maxp_record ) {
+		return -1;
+	}
+	Sfnt_create_table(sfnt, fp, maxp_record);
+
+	int i;
+	for (i = 0; i < sfnt->tableRecordsIdx_; ++i) {
+		if ( !Tag_is(TableRecord_get_tag(sfnt->tableRecords_[i]), "maxp") ) {
+			Sfnt_create_table(sfnt, fp, sfnt->tableRecords_[i]);
+		}
+	}
+
+	return 0;
+}
+
+TableRecord* Sfnt_find_maxp_record(Sfnt* sfnt)
+{
+	int i;
+	for (i = 0; i < sfnt->tableRecordsIdx_; ++i) {
+		if ( Tag_is(TableRecord_get_tag(sfnt->tableRecords_[i]), "maxp") ) {
+			return sfnt->tableRecords_[i];
+		}
+	}
+
+	return NULL;
+}
+
+void Sfnt_create_table(Sfnt* sfnt, FILE* fp, TableRecord* record)
+{
+	uint32_t offset = TableRecord_get_offset(record);
+	uint32_t length = TableRecord_get_length(record);
+	fseek(fp, (long)offset, SEEK_SET);
+	unsigned char* buf = (unsigned char*)malloc(length);
+	fread(buf, 1, length, fp);
+	Table* table = NULL;
+
+	if ( Tag_is(TableRecord_get_tag(record), "maxp") ) {
+		table = (Table*)MaxpTable_create(TableRecord_get_tag(record));
+	}
+
+	if ( table ) {
+		Table_parse(table, buf, length);
+		TableRecord_set_table(record, table);
+		sfnt->tables_[sfnt->tablesIdx_] = table;
+		++sfnt->tablesIdx_;
+	}
+
+	SAFE_FREE(buf);
 }
 
 void Sfnt_show(const Sfnt* sfnt)

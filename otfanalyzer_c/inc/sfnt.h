@@ -13,7 +13,7 @@ typedef struct Sfnt {
 	struct TableRecord** tableRecords_;
 	unsigned tableRecordsIdx_;
 	unsigned tableRecordsLen_;
-	struct Table** table_;
+	struct Table** tables_;
 	unsigned tablesIdx_;
 	unsigned tablesLen_;
 } Sfnt;

@@ -52,5 +52,5 @@ bool Tag_is(const Tag* tag, const char* str)
 		s2[i] = tolower(str[i]);
 	}
 
-	return ( strcmp(s1, s2) );
+	return ( strcmp(s1, s2) == 0 );
 }

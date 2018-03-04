@@ -24,9 +24,9 @@ void SfntHeader_delete(SfntHeader* sfntHeader)
 int SfntHeader_parse(SfntHeader* sfntHeader, unsigned char* buf, unsigned bufSize)
 {
 	BufferReader* reader = BufferReader_create(buf, bufSize);
-	uint32_t sfntVersion = BufferReader_readUint32(reader);
 	int result = 0;
 
+	uint32_t sfntVersion = BufferReader_readUint32(reader);
 	if ( sfntVersion != 0x4F54544F ) {
 		result = -1;
 		goto end_proc;
