@@ -8,8 +8,6 @@
 
 #define SAFE_FREE(x) if (x) { free(x); }
 
-const unsigned TableRecord_SIZE = 16;
-
 TableRecord* TableRecord_create(void)
 {
 	TableRecord* tableRecord = (TableRecord*)malloc(sizeof(TableRecord));

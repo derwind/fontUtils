@@ -10,7 +10,7 @@ typedef struct SfntHeader {
 	uint16_t range_shift_;
 } SfntHeader;
 
-const int SfntHeader_SIZE;
+#define SfntHeader_SIZE (12)
 
 SfntHeader* SfntHeader_create(void);
 void SfntHeader_delete(SfntHeader* sfntHeader);

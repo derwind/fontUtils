@@ -16,7 +16,7 @@ typedef struct TableRecord {
 	struct Table* table_;
 } TableRecord;
 
-const unsigned TableRecord_SIZE;
+#define TableRecord_SIZE (16)
 
 TableRecord* TableRecord_create(void);
 void TableRecord_delete(TableRecord* tableRecord);

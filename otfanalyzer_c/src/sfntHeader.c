@@ -6,8 +6,6 @@
 
 #define SAFE_FREE(x) if (x) { free(x); }
 
-const int SfntHeader_SIZE = 12;
-
 SfntHeader* SfntHeader_create(void)
 {
 	SfntHeader* sfntHeader = (SfntHeader*)malloc(sizeof(SfntHeader));
