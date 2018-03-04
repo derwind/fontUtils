@@ -6,6 +6,7 @@
 #include "table.h"
 #include "tag.h"
 #include "maxpTable.h"
+#include "os_2Table.h"
 
 #define SAFE_FREE(x) if (x) { free(x); }
 
@@ -149,6 +150,9 @@ void Sfnt_create_table(Sfnt* sfnt, FILE* fp, TableRecord* record)
 
 	if ( Tag_is(TableRecord_get_tag(record), "maxp") ) {
 		table = (Table*)MaxpTable_create(TableRecord_get_tag(record));
+	}
+	else if ( Tag_is(TableRecord_get_tag(record), "OS/2") ) {
+		table = (Table*)OS_2Table_create(TableRecord_get_tag(record));
 	}
 
 	if ( table ) {

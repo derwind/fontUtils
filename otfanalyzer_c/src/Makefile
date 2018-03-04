@@ -2,7 +2,7 @@ CC = clang
 
 TARGET=libotfanalyzer.a
 
-OBJS = sfnt.o sfntHeader.o bufferReader.o tableRecord.o tag.o table.o maxpTable.o
+OBJS = sfnt.o sfntHeader.o bufferReader.o tableRecord.o tag.o table.o maxpTable.o os_2Table.o
 
 INC += -I. -I../inc
 
