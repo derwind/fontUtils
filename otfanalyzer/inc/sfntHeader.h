@@ -5,10 +5,13 @@
 
 class SfntHeader {
  public:
+	static const unsigned size = 12;
+
+ public:
 	SfntHeader();
 	~SfntHeader();
 
-	int parse(const unsigned char* buf);
+	int parse(unsigned char* buf, unsigned bufSize);
 
 	void show() const;
 

@@ -1,11 +1,8 @@
-#include "sfntHeader.h"
 #include <cstdio>
-
-static
-inline uint16_t ushortValue(const unsigned char* buf)
-{
-	return (uint16_t)buf[0] << 8 | buf[1];
-}
+#include <cstring>
+#include <arpa/inet.h>
+#include "sfntHeader.h"
+#include "bufferReader.h"
 
 SfntHeader::SfntHeader()
 :
@@ -20,20 +17,20 @@ SfntHeader::~SfntHeader()
 {
 }
 
-int SfntHeader::parse(const unsigned char* buf)
+int SfntHeader::parse(unsigned char* buf, unsigned bufSize)
 {
-	if ( !(buf[0] == 'O' && buf[1] == 'T' && buf[2] == 'T' && buf[3] == 'O') ) {
+	BufferReader reader(buf, bufSize);
+
+	uint32_t sfntVersion = reader.readUint32();
+
+	if ( sfntVersion != 0x4F54544F ) {
 		return -1;
 	}
 
-	int i = 4;
-	num_tables_ = ushortValue(&buf[i]);
-	i += 2;
-	search_range_ = ushortValue(&buf[i]);
-	i += 2;
-	entry_selector_ = ushortValue(&buf[i]);
-	i += 2;
-	range_shift_ = ushortValue(&buf[i]);
+	num_tables_ = reader.readUint16();
+	search_range_ = reader.readUint16();
+	entry_selector_ = reader.readUint16();
+	range_shift_ = reader.readUint16();
 
 	return 0;
 }

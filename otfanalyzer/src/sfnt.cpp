@@ -1,6 +1,6 @@
-#include "sfnt.h"
 #include <cstdio>
 #include <fstream>
+#include "sfnt.h"
 
 Sfnt::Sfnt(const char* path)
 :
@@ -20,8 +20,8 @@ int Sfnt::parse()
 	}
 
 	unsigned char buf[256];
-	ifs.read((char*)buf, 12);
-	if ( sfntHeader_.parse(buf) != 0 ) {
+	ifs.read((char*)buf, SfntHeader::size);
+	if ( sfntHeader_.parse(buf, SfntHeader::size) != 0 ) {
 		return -1;
 	}
 

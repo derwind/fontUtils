@@ -1,6 +1,6 @@
 TARGET=libotfanalyzer.a
 
-OBJS = sfnt.o sfntHeader.o
+OBJS = sfnt.o sfntHeader.o bufferReader.o
 
 INC += -I. -I../inc
 
