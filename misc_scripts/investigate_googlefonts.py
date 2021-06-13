@@ -4,7 +4,7 @@ import argparse
 from fontTools.ttLib import TTFont
 
 def get_psname(ttFont):
-    return ttFont["name"].getName(nameID=6, platformID=3, platEncID=1)
+    return ttFont["name"].getName(nameID=6, platformID=3, platEncID=1).toStr()
 
 class IsKanji:
     def __init__(self):
