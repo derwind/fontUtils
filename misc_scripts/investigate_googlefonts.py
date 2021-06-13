@@ -15,13 +15,17 @@ class IsKanji:
 
 iskanji = IsKanji()
 
-def enumerate_many_kanji_fonts(ref_font, font_dir):
+def enumerate_many_kanji_fonts(ref_font, font_dir, collect_dir=None):
     ref_psname = get_psname(ref_font)
     ref_cmap = ref_font.getBestCmap()
     ref_kanjis = {uni for uni in ref_cmap if iskanji(uni)}
 
     print(f"ref kanjis: {len(ref_kanjis)}")
     print("-"*20)
+
+    if collect_dir is not None:
+        import shutil
+        os.makedirs(collect_dir, exist_ok=True)
 
     for file in glob.glob(os.path.join(font_dir, "*.*tf")):
         ttFont =TTFont(file)
@@ -36,11 +40,16 @@ def enumerate_many_kanji_fonts(ref_font, font_dir):
             continue
 
         print(psname, len(shared_kanjis), f"({round(ratio * 100, 2)}%)")
+        if collect_dir is not None:
+            basename = os.path.basename(file)
+            shutil.copy2(file, os.path.join(collect_dir, basename))
 
 def get_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ref", metavar="REF_FONT", dest="ref_font", type=str, required=True,
                         help="reference font")
+    parser.add_argument("--collect", metavar="collect_dir", dest="collect_dir", type=str, default=None,
+                        help="directory path in which target fonts will be collected")
     parser.add_argument("font_dir", metavar="FONT_DIR", type=str,
                         help="fonts directory")
 
@@ -53,7 +62,7 @@ def main():
 
     ref_font = TTFont(args.ref_font)
 
-    enumerate_many_kanji_fonts(ref_font, args.font_dir)
+    enumerate_many_kanji_fonts(ref_font, args.font_dir, args.collect_dir)
 
 if __name__ == "__main__":
     main()
