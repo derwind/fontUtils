@@ -1966,7 +1966,7 @@ class CmapSubTable0(object):
         print("    format       = %d" % (self.format))
         print("    length       = %d" % (self.length))
         print("    language     = %d" % (self.language))
-        print("    glyphIdArray = %d" % (self.glyphIdArray))
+        print(f"    glyphIdArray = {self.glyphIdArray}")
 
 class CmapSubTable2(object):
     def __init__(self, buf):
@@ -1998,7 +1998,7 @@ class CmapSubTable4(object):
         self.entrySelector, buf = ValUtil.ushortpop(buf)
         self.rangeShift, buf    = ValUtil.ushortpop(buf)
 
-        segCount = self.segCountX2 / 2
+        segCount = self.segCountX2 // 2
 
         self.endCount, buf      = ValUtil.ushortspop(buf, segCount)
         self.reservedPad, buf   = ValUtil.ushortpop(buf)
@@ -2447,7 +2447,37 @@ class NameRecord(object):
         print("    offset     = %d" % (self.offset))
         if storage:
             s = storage[self.offset:self.offset+self.length]
-            print("    string     = %s" % (s))
+            print("    string     = %s" % (self.bytes2str(s)))
+
+    def bytes2str(self, data):
+        if self.platformID == 0:
+            return data.decode("utf-8")
+        elif self.platformID == 1:
+            if self.encodingID == 0:
+                s = ""
+                for b in data:
+                    if b != 0xa9:
+                        s += chr(b)
+                    else:
+                        s += "(c)"
+                return s
+            elif self.encodingID == 1:
+                try:
+                    return data.decode("shift_jis")
+                except:
+                    pass
+        elif self.platformID == 3:
+            if self.encodingID == 1:
+                s = ""
+                for b in data:
+                    if b != 0xa9:
+                        s += chr(b)
+                    else:
+                        s += "(c)"
+                return s
+        else:
+            raise NotImplementedError()
+        return data
 
 class LangTagRecord(object):
     def __init__(self, buf):
@@ -2997,7 +3027,11 @@ class NameIndex(CffINDEXData):
         super(NameIndex, self).show()
 
         if self.count != 0:
-            print("    data    = {0}".format(", ".join(self.data)))
+            data = [data.decode("ascii") for data in self.data]
+            print("    data    = {0}".format(", ".join(data)))
+
+    def byte2str(self):
+        self.data
 
 class TopDictIndex(CffINDEXData):
     def __init__(self, buf):
@@ -3026,7 +3060,7 @@ class TopDictIndex(CffINDEXData):
                         if op == TopDictOp.version or op == TopDictOp.Notice or op == TopDictOp.Copyright \
                            or op == TopDictOp.FullName or op == TopDictOp.FamilyName or op == TopDictOp.Weight \
                            or op == TopDictOp.PostScript or op == TopDictOp.BaseFontName or op == TopDictOp.FontName:
-                            s = stringIndex.data[args[0] - StdStr.nStdStr] if args[0] >= StdStr.nStdStr else StdStr.to_s(args[0])
+                            s = stringIndex.data[args[0] - StdStr.nStdStr].decode("ascii") if args[0] >= StdStr.nStdStr else StdStr.to_s(args[0])
                             print("      {0} = {1} << {2} >>".format(TopDictOp.to_s(op), args, s))
                         elif op == TopDictOp.ROS:
                             s0 = stringIndex.data[args[0] - StdStr.nStdStr] if args[0] >= StdStr.nStdStr else StdStr.to_s(args[0])
