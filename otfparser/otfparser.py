@@ -2857,11 +2857,12 @@ class CffTable(Table):
         if self.encodings:
             self.encodings.show()
         if self.charsets:
-            self.charsets.show(self.stringIndex, self.topDictIndex.isNameKeyed())
+            self.charsets.retrieve_glyph_names(self.stringIndex, self.topDictIndex.isNameKeyed())
+            self.charsets.show()
         if self.FDSelect:
             self.FDSelect.show()
         if self.charStringsIndex:
-            self.charStringsIndex.show()
+            self.charStringsIndex.show(self.charsets)
         if self.localSubrsIndex:
             self.localSubrsIndex.show()
         self.globalSubrIndex.show()
@@ -3171,7 +3172,7 @@ class CharStringsIndex(CffINDEXData):
         self.glyphs = [ Type2Charstring(d) for d in self.data ]
         return buf
 
-    def show(self, stringIndex = None):
+    def show(self, charsets = None):
         super(CharStringsIndex, self).show()
 
         svgPen = None
@@ -3179,8 +3180,11 @@ class CharStringsIndex(CffINDEXData):
             pen = SvgPen()
             #pen = PsPen()
 
-        for g in self.glyphs:
-            print("    -----")
+        for gid, g in enumerate(self.glyphs):
+            sep = "    -----"
+            if charsets.glyph_names:
+                sep += f" ({charsets.glyph_names[gid]})"
+            print(sep)
             g.show()
             if DEBUG:
                 print("        -*-*-")
@@ -3585,6 +3589,7 @@ class PrivateDict(CffDictData):
 class CffCharsets(object):
     def __init__(self, buf, nGlyphs):
         self.nGlyphs = nGlyphs
+        self.glyph_names = []
         self.buf = self.parse(buf)
 
     def parse(self, buf):
@@ -3597,9 +3602,11 @@ class CffCharsets(object):
                 self.glyph.append(g)
         elif self.format == 1:
             self.Range1 = []
-            for i in range(self.nGlyphs-1):
+            nGlyphs = self.nGlyphs - 1
+            while nGlyphs > 0:
                 ran1 = CffCharsetsRange1(buf)
                 self.Range1.append(ran1)
+                nGlyphs -= (1 + ran1.nLeft)
                 buf = ran1.buf
         elif self.format == 2:
             self.Range2 = []
@@ -3612,27 +3619,65 @@ class CffCharsets(object):
 
         return buf
 
-    def show(self, stringIndex = None, isNameKeyed = True):
+    def retrieve_glyph_names(self, stringIndex = None, isNameKeyed = True):
+        def sid2name(sid):
+            if sid < StdStr.nStdStr:
+                name = StdStr.to_s(sid)
+            elif stringIndex:
+                name = stringIndex.data[sid - StdStr.nStdStr]
+                name = name.decode("ascii")
+            return name
+
+        self.glyph_names = [StdStr.to_s(StdStr._notdef)]
+
+        if self.format == 0:
+            for sid in self.glyph:
+                if isNameKeyed:
+                    self.glyph_names.append(sid2name(sid))
+                else:
+                    self.glyph_names.append(f"cid{sid:05}")
+        elif self.format == 1:
+            for r in self.Range1:
+                if isNameKeyed:
+                    for sid in range(r.first, r.first + r.nLeft + 1):
+                        self.glyph_names.append(sid2name(sid))
+                else:
+                    for sid in range(r.first, r.first + r.nLeft + 1):
+                        self.glyph_names.append(f"cid{sid:05}")
+        elif self.format == 2:
+            for r in self.Range2:
+                if isNameKeyed:
+                    for sid in range(r.first, r.first + r.nLeft + 1):
+                        self.glyph_names.append(sid2name(sid))
+                else:
+                    for sid in range(r.first, r.first + r.nLeft + 1):
+                        self.glyph_names.append(f"cid{sid:05}")
+
+    def show(self):
         print("  [Charsets]")
         if self.format == 0:
             print("    format  = %d" % (self.format))
             print("    glyph   = {0}".format(self.glyph))
-            for sid in self.glyph:
-                if isNameKeyed:
-                    name = ""
-                    if sid <= StdStr.nStdStr:
-                        name = StdStr.to_s(sid)
-                    elif stringIndex:
-                        name = stringIndex.data[sid - StdStr.nStdStr]
-                    print("      {0}: {1}".format(sid, name))
-                else:
-                    print("      {0}: CID{1}".format(sid, sid))
-        elif self.format == 1:
+            for i, sid in enumerate(self.glyph):
+                print("      {0}: {1}".format(sid, self.glyph_names[i + 1]))
+        elif self.format == 1 or self.format == 2:
             print("    format  = %d" % (self.format))
-            print("    Range1  = {0}".format([(r.first, r.nLeft) for r in self.Range1]))
+            gid = 1
+            for r in self.Range1:
+                names = []
+                for _ in range(r.nLeft + 1):
+                    names.append(self.glyph_names[gid])
+                    gid += 1
+                print(f"      ({r.first}, {r.nLeft}): {', '.join(names)}")
         elif self.format == 2:
             print("    format  = %d" % (self.format))
-            print("    Range2  = {0}".format([(r.first, r.nLeft) for r in self.Range2]))
+            gid = 1
+            for r in self.Range2:
+                names = []
+                for _ in range(r.nLeft + 1):
+                    names.append(self.glyph_names[gid])
+                    gid += 1
+                print(f"      ({r.first}, {r.nLeft}): {', '.join(names)}")
         else:
             raise
 
@@ -3645,9 +3690,12 @@ class CffCharsetsRange1(object):
         self.nLeft, buf = ValUtil.ucharpop(buf)
         return buf
 
-class CffCharsetsRange2(object):
+    def __str__(self):
+        return f"first={self.first} nLeft={self.nLeft}"
+
+class CffCharsetsRange2(CffCharsetsRange1):
     def __init__(self, buf):
-        self.buf = self.parse(buf)
+        super().__init__(buf)
 
     def parse(self, buf):
         self.first, buf = ValUtil.ushortpop(buf)
