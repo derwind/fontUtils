@@ -2454,9 +2454,10 @@ class NameRecord(object):
             return data.decode("utf-8")
         elif self.platformID == 1:
             if self.encodingID == 0:
+                # s = data.decode("ascii")
                 s = ""
                 for b in data:
-                    if b != 0xa9:
+                    if b != 0xa9: # copyright sign in MacJapanese...
                         s += chr(b)
                     else:
                         s += "(c)"
@@ -2468,9 +2469,10 @@ class NameRecord(object):
                     pass
         elif self.platformID == 3:
             if self.encodingID == 1:
+                # s = data.decode("ascii")
                 s = ""
                 for b in data:
-                    if b != 0xa9:
+                    if b != 0xa9: # copyright sign in MacJapanese...
                         s += chr(b)
                     else:
                         s += "(c)"
